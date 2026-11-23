@@ -1,0 +1,1580 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Banc d'optique quantique</title>
+<style>
+:root{--bg:#0a0d13;--panel:#121722;--panel2:#171e2c;--line:#243047;--txt:#dce6f5;--mut:#8796ad;--acc:#7aa8ff;--q:#c38bff;--ok:#7cf29a}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font:13px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+#app{display:grid;grid-template-columns:210px 1fr 300px;grid-template-rows:46px 1fr 270px;height:100vh}
+header{grid-column:1/4;display:flex;align-items:center;gap:8px;padding:0 10px;background:var(--panel);border-bottom:1px solid var(--line);min-width:0;overflow-x:auto}
+header h1{font-size:15px;margin:0 8px 0 0;white-space:nowrap;font-weight:650;letter-spacing:.2px}
+header h1 span{color:var(--q)}
+.lang{display:flex;flex:none}.lang button{padding:4px 9px;border-radius:0}.lang button:first-child{border-radius:6px 0 0 6px}.lang button:last-child{border-radius:0 6px 6px 0;border-left:none}
+button,select,input{font:inherit;color:var(--txt)}
+button{background:var(--panel2);border:1px solid var(--line);border-radius:6px;padding:5px 10px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--acc)}
+button.on{background:#233a66;border-color:var(--acc)}
+button.q{border-color:#5b3d86}
+button.q:hover{border-color:var(--q)}
+select,input[type=number],input[type=text]{background:#0e131d;border:1px solid var(--line);border-radius:5px;padding:4px 6px}
+.sep{width:1px;height:24px;background:var(--line);flex:none}
+#palette{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;padding:6px 8px 20px}
+#palette h3{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--mut);margin:12px 2px 5px;font-weight:600}
+.pitem{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:6px;cursor:grab;user-select:none;border:1px solid transparent}
+.pitem:hover{background:var(--panel2);border-color:var(--line)}
+.pitem canvas{flex:none}
+#stage{position:relative;overflow:hidden;background:var(--bg)}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+#hud{position:absolute;left:10px;top:6px;color:var(--mut);font-size:11.5px;pointer-events:none;text-shadow:0 0 4px #000}
+#warn{position:absolute;right:10px;top:8px;color:#ffb35c;font-size:12px;display:none}
+#props{background:var(--panel);border-left:1px solid var(--line);overflow-y:auto;padding:10px 12px 20px}
+#props h2{font-size:14px;margin:2px 0 8px}
+.row{margin:8px 0}
+.row label{display:flex;justify-content:space-between;color:var(--mut);font-size:12px;margin-bottom:3px}
+.row label b{color:var(--txt);font-weight:600}
+.row input[type=range]{width:100%;accent-color:var(--acc)}
+.row input[type=number],.row input[type=text],.row select{width:100%}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
+.grid3 input{width:100%}
+.btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.desc{color:var(--mut);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:10px 0}
+.desc b{color:var(--txt)}
+#bottom{grid-column:1/4;background:var(--panel);border-top:1px solid var(--line);display:flex;flex-direction:column;min-height:0}
+#qbar{display:flex;align-items:center;gap:8px;padding:6px 10px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#qbar .stat{color:var(--mut);font-size:12px}
+#qbar .stat b{color:var(--txt)}
+#cards{display:flex;gap:10px;padding:10px;overflow-x:auto;overflow-y:hidden;flex:1;min-height:0}
+.card{flex:none;width:250px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;cursor:pointer}
+.card.sel{border-color:var(--acc)}
+.card.wide{width:380px}
+.card .t{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.card .t b{font-size:13px}
+.card .t span{color:var(--mut);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .val{font-size:12.5px;margin:3px 0;min-height:34px;font-variant-numeric:tabular-nums}
+.card canvas{width:100%;flex:1;min-height:0;border-radius:6px;background:#0b0f17}
+.empty{color:var(--mut);padding:10px}
+.modal{position:fixed;inset:0;background:#000a;display:none;align-items:center;justify-content:center;z-index:10}
+.modal.show{display:flex}
+.modal .box{background:var(--panel);border:1px solid var(--line);border-radius:12px;max-width:760px;width:92vw;max-height:86vh;overflow:auto;padding:16px 20px}
+.modal h2{margin:0 0 8px;font-size:17px}
+.modal h3{margin:14px 0 4px;font-size:14px;color:var(--acc)}
+.modal p,.modal li{color:#c3cfe2}
+.modal table{border-collapse:collapse;font-size:12.5px}
+.modal td,.modal th{border:1px solid var(--line);padding:3px 8px;text-align:left}
+.modal textarea{width:100%;height:280px;background:#0e131d;color:var(--txt);border:1px solid var(--line);border-radius:6px;font:12px ui-monospace,monospace}
+kbd{background:#0e131d;border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:11px}
+@media (max-width:900px){#app{grid-template-columns:150px 1fr 240px;grid-template-rows:46px 1fr 220px}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="hTitle">Banc d'optique <span>quantique</span></h1>
+    <div class="lang"><button id="lFR" class="on">FR</button><button id="lEN">EN</button></div>
+    <select id="preset" title="Charger une expérience"><option value="">📚 Expériences…</option></select>
+    <button id="bNew" title="Vider la table">Nouveau</button>
+    <button id="bUndo" title="Annuler (Ctrl+Z)">↶ Annuler</button>
+    <div class="sep"></div>
+    <button id="bSnap" class="on" title="Aimanter à la grille (positions 5 mm, angles 5°)">Aimant</button>
+    <button id="bRays" class="on" title="Afficher les faisceaux">Rayons</button>
+    <button id="bFit" title="Recentrer la vue">⤢ Vue</button>
+    <div class="sep"></div>
+    <button id="bExport">Exporter</button>
+    <button id="bImport">Importer</button>
+    <button id="bHelp">? Aide</button>
+  </header>
+  <aside id="palette"></aside>
+  <main id="stage"><canvas id="cv"></canvas><div id="hud"></div><div id="warn"></div></main>
+  <aside id="props"></aside>
+  <section id="bottom">
+    <div id="qbar"></div>
+    <div id="cards"></div>
+  </section>
+</div>
+<div class="modal" id="mHelp"><div class="box" id="helpBox"></div></div>
+<div class="modal" id="mIO"><div class="box">
+  <h2 id="ioTitle">Exporter</h2>
+  <p id="ioHint" style="margin:0 0 8px"></p>
+  <textarea id="ioText" spellcheck="false"></textarea>
+  <div class="btns"><button id="ioCopy">Copier</button><label class="btn"><input type="file" id="ioFile" accept=".json,application/json" style="display:none"><button id="ioFileBtn" type="button">Ouvrir un fichier…</button></label><button id="ioLoad">Charger ce montage</button><button id="ioClose">Fermer</button></div>
+</div></div>
+<script>
+// ===================== MOTEUR PHYSIQUE =====================
+// Unités : longueurs en mm, longueurs d'onde en nm, angles en degrés (UI).
+// Polarisation (Jones) : composante 0 = H (dans le plan de la table, "p"), composante 1 = V (perpendiculaire, "s").
+// Convention de phase : e^{+ik·L}. Faisceaux gaussiens : paramètre complexe q (1/q = 1/R + iλ/(πw²)).
+const D2R = Math.PI / 180;
+const C = (r, i = 0) => [r, i];
+const cadd = (a, b) => [a[0] + b[0], a[1] + b[1]];
+const cmul = (a, b) => [a[0] * b[0] - a[1] * b[1], a[0] * b[1] + a[1] * b[0]];
+const csc = (a, s) => [a[0] * s, a[1] * s];
+const cexp = p => [Math.cos(p), Math.sin(p)];
+const cconj = a => [a[0], -a[1]];
+const ca2 = a => a[0] * a[0] + a[1] * a[1];
+const cinv = a => { const d = ca2(a); return [a[0] / d, -a[1] / d]; };
+const J = {
+  mul(M, E) { return [cadd(cmul(M[0][0], E[0]), cmul(M[0][1], E[1])), cadd(cmul(M[1][0], E[0]), cmul(M[1][1], E[1]))]; },
+  sc(E, c) { return [cmul(E[0], c), cmul(E[1], c)]; },
+  sr(E, s) { return [csc(E[0], s), csc(E[1], s)]; },
+  n2(E) { return ca2(E[0]) + ca2(E[1]); },
+};
+function mm2(A, B) {
+  const r = [[0, 0], [0, 0]];
+  for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) r[i][j] = cadd(cmul(A[i][0], B[0][j]), cmul(A[i][1], B[1][j]));
+  return r;
+}
+function rotM(t) { const c = Math.cos(t), s = Math.sin(t); return [[C(c), C(-s)], [C(s), C(c)]]; }
+function retarderM(theta, delta) { return mm2(mm2(rotM(theta), [[C(1), C(0)], [C(0), cexp(delta)]]), rotM(-theta)); }
+function polarizerM(theta) { const c = Math.cos(theta), s = Math.sin(theta); return [[C(c * c), C(c * s)], [C(c * s), C(s * s)]]; }
+
+const v = {
+  add: (a, b) => [a[0] + b[0], a[1] + b[1]], sub: (a, b) => [a[0] - b[0], a[1] - b[1]],
+  sc: (a, s) => [a[0] * s, a[1] * s], dot: (a, b) => a[0] * b[0] + a[1] * b[1],
+  len: a => Math.hypot(a[0], a[1]), norm: a => { const l = Math.hypot(a[0], a[1]) || 1; return [a[0] / l, a[1] / l]; },
+  neg: a => [-a[0], -a[1]],
+};
+const reflect = (d, n) => v.sub(d, v.sc(n, 2 * v.dot(d, n)));
+
+const MATERIALS = {
+  BK7: { name: 'Verre crown BK7', A: 1.5046, B: 4200 },
+  F2: { name: 'Verre flint F2', A: 1.5939, B: 9000 },
+  SF11: { name: 'Flint dense SF11', A: 1.7387, B: 15970 },
+  SiO2: { name: 'Silice fondue', A: 1.4482, B: 3540 },
+  H2O: { name: 'Eau', A: 1.3239, B: 3130 },
+  diamant: { name: 'Diamant', A: 2.377, B: 13770 },
+  custom: { name: 'Indice personnalisé', A: 1.5, B: 0 },
+};
+function matIndex(p, lam) {
+  if (p.material === 'custom') return p.n || 1.5;
+  const m = MATERIALS[p.material] || MATERIALS.BK7;
+  return m.A + m.B / (lam * lam);
+}
+
+function polJones(pol, ang) {
+  const r = Math.SQRT1_2;
+  switch (pol) {
+    case 'H': return [C(1), C(0)];
+    case 'V': return [C(0), C(1)];
+    case 'D': return [C(r), C(r)];
+    case 'A': return [C(r), C(-r)];
+    case 'R': return [C(r), C(0, r)];
+    case 'L': return [C(r), C(0, -r)];
+    default: { const a = (ang || 0) * D2R; return [C(Math.cos(a)), C(Math.sin(a))]; }
+  }
+}
+
+// ---------- Définitions des composants ----------
+const POL_OPTS = [['H', 'H (horizontale) |0⟩'], ['V', 'V (verticale) |1⟩'], ['D', 'D (+45°) |+⟩'], ['A', 'A (−45°) |−⟩'], ['R', 'R (circulaire droite) |+i⟩'], ['L', 'L (circulaire gauche) |−i⟩'], ['angle', 'Linéaire, angle libre'], ['U', 'Non polarisée (mélange)']];
+const SPEC_OPTS = [['mono', 'Monochromatique'], ['rgb', 'RVB (3 raies)'], ['white', 'Blanche (continu, 13 raies)']];
+const MAT_OPTS = Object.entries(MATERIALS).map(([k, m]) => [k, m.name]);
+const P = {
+  lambda: { label: 'Longueur d\'onde λ', type: 'range', min: 380, max: 1100, step: 1, unit: 'nm' },
+  power: { label: 'Puissance', type: 'number', min: 0, max: 1000, step: 0.1, unit: 'mW' },
+  pol: { label: 'Polarisation', type: 'select', options: POL_OPTS },
+  polAngle: { label: 'Angle de polarisation', type: 'range', min: -90, max: 90, step: 0.5, unit: '°', showIf: p => p.pol === 'angle' },
+  spectrum: { label: 'Spectre', type: 'select', options: SPEC_OPTS },
+  width: { label: 'Diamètre du faisceau (1/e²)', type: 'number', min: 0.05, max: 50, step: 0.05, unit: 'mm' },
+  size: { label: 'Taille', type: 'number', min: 2, max: 400, step: 1, unit: 'mm' },
+  theta: { label: 'Angle de l\'axe θ', type: 'range', min: -90, max: 90, step: 0.5, unit: '°' },
+};
+const DEFS = {
+  laser: { cat: 'Sources', name: 'Laser', kind: 'source', color: '#ff5566', params: { lambda: 633, power: 1, pol: 'H', polAngle: 0, spectrum: 'mono', width: 1 }, spec: ['lambda', 'spectrum', 'power', 'pol', 'polAngle', 'width'] },
+  collimated: { cat: 'Sources', name: 'Faisceau large', kind: 'source', color: '#ffaa44', params: { lambda: 550, power: 1, pol: 'U', polAngle: 0, spectrum: 'mono', beamWidth: 20, rays: 9 }, spec: ['lambda', 'spectrum', 'power', 'pol', 'polAngle', ['beamWidth', { label: 'Largeur du faisceau', type: 'number', min: 1, max: 200, step: 1, unit: 'mm' }], ['rays', { label: 'Nombre de rayons', type: 'range', min: 2, max: 41, step: 1 }]] },
+  point: { cat: 'Sources', name: 'Source ponctuelle', kind: 'source', color: '#ffdd55', params: { lambda: 550, power: 1, pol: 'U', polAngle: 0, spectrum: 'mono', spread: 30, rays: 15 }, spec: ['lambda', 'spectrum', 'power', 'pol', 'polAngle', ['spread', { label: 'Ouverture angulaire', type: 'range', min: 1, max: 360, step: 1, unit: '°' }], ['rays', { label: 'Nombre de rayons', type: 'range', min: 2, max: 61, step: 1 }]] },
+  photon: { cat: 'Sources', name: 'Source de photons uniques', kind: 'source', color: '#c38bff', params: { lambda: 810, pol: 'H', polAngle: 0, width: 1 }, spec: ['lambda', 'pol', 'polAngle', 'width'], photon: true },
+
+  mirror: { cat: 'Miroirs & séparateurs', name: 'Miroir plan', kind: 'seg', params: { size: 30 }, spec: ['size'] },
+  concave: { cat: 'Miroirs & séparateurs', name: 'Miroir courbe', kind: 'seg', params: { f: 100, size: 40 }, spec: [['f', { label: 'Focale f (négative = convexe)', type: 'number', min: -2000, max: 2000, step: 1, unit: 'mm' }], 'size'] },
+  bs: { cat: 'Miroirs & séparateurs', name: 'Lame séparatrice', kind: 'seg', params: { R: 50, size: 30 }, spec: [['R', { label: 'Réflectivité R', type: 'range', min: 0, max: 100, step: 0.5, unit: '%' }], 'size'] },
+  pbs: { cat: 'Miroirs & séparateurs', name: 'Cube séparateur polarisant', kind: 'seg', params: { size: 25 }, spec: ['size'] },
+
+  lens: { cat: 'Lentilles & verres', name: 'Lentille mince', kind: 'seg', params: { f: 100, size: 40 }, spec: [['f', { label: 'Focale f (négative = divergente)', type: 'number', min: -2000, max: 2000, step: 1, unit: 'mm' }], 'size'] },
+  block: { cat: 'Lentilles & verres', name: 'Bloc de verre', kind: 'glass', params: { w: 30, h: 50, material: 'BK7', n: 1.5, fresnel: true }, spec: [['w', { label: 'Épaisseur', type: 'number', min: 1, max: 300, step: 1, unit: 'mm' }], ['h', { label: 'Hauteur', type: 'number', min: 1, max: 300, step: 1, unit: 'mm' }], ['material', { label: 'Matériau', type: 'select', options: MAT_OPTS }], ['n', { label: 'Indice n', type: 'number', min: 1, max: 4, step: 0.001, showIf: p => p.material === 'custom' }], ['fresnel', { label: 'Réflexions partielles (Fresnel)', type: 'check' }]] },
+  prism: { cat: 'Lentilles & verres', name: 'Prisme', kind: 'glass', params: { side: 60, apex: 60, material: 'SF11', n: 1.5, fresnel: false }, spec: [['side', { label: 'Taille', type: 'number', min: 5, max: 300, step: 1, unit: 'mm' }], ['apex', { label: 'Angle au sommet', type: 'range', min: 10, max: 120, step: 1, unit: '°' }], ['material', { label: 'Matériau', type: 'select', options: MAT_OPTS }], ['n', { label: 'Indice n', type: 'number', min: 1, max: 4, step: 0.001, showIf: p => p.material === 'custom' }], ['fresnel', { label: 'Réflexions partielles (Fresnel)', type: 'check' }]] },
+
+  polarizer: { cat: 'Polarisation & phase', name: 'Polariseur', kind: 'seg', params: { theta: 0, size: 25 }, spec: ['theta', 'size'] },
+  hwp: { cat: 'Polarisation & phase', name: 'Lame demi-onde λ/2', kind: 'seg', params: { theta: 22.5, size: 25 }, spec: ['theta', 'size'] },
+  qwp: { cat: 'Polarisation & phase', name: 'Lame quart d\'onde λ/4', kind: 'seg', params: { theta: 45, size: 25 }, spec: ['theta', 'size'] },
+  retarder: { cat: 'Polarisation & phase', name: 'Lame à retard variable', kind: 'seg', params: { theta: 0, delta: 90, size: 25 }, spec: ['theta', ['delta', { label: 'Retard δ', type: 'range', min: 0, max: 360, step: 1, unit: '°' }], 'size'] },
+  rotator: { cat: 'Polarisation & phase', name: 'Rotateur (Faraday)', kind: 'seg', params: { theta: 45, size: 25 }, spec: [['theta', { label: 'Rotation', type: 'range', min: -180, max: 180, step: 0.5, unit: '°' }], 'size'] },
+  phase: { cat: 'Polarisation & phase', name: 'Déphaseur φ', kind: 'seg', params: { phi: 0, size: 25 }, spec: [['phi', { label: 'Déphasage φ', type: 'range', min: 0, max: 360, step: 1, unit: '°' }], 'size'] },
+
+  filter: { cat: 'Filtres & diffraction', name: 'Filtre passe-bande', kind: 'seg', params: { center: 550, bw: 40, size: 25 }, spec: [['center', { label: 'Centre', type: 'range', min: 380, max: 1100, step: 1, unit: 'nm' }], ['bw', { label: 'Largeur (FWHM)', type: 'range', min: 1, max: 400, step: 1, unit: 'nm' }], 'size'] },
+  nd: { cat: 'Filtres & diffraction', name: 'Densité neutre', kind: 'seg', params: { T: 50, size: 25 }, spec: [['T', { label: 'Transmission', type: 'range', min: 0, max: 100, step: 0.1, unit: '%' }], 'size'] },
+  iris: { cat: 'Filtres & diffraction', name: 'Diaphragme (iris)', kind: 'seg', params: { aperture: 6, size: 40 }, spec: [['aperture', { label: 'Ouverture', type: 'number', min: 0, max: 400, step: 0.5, unit: 'mm' }], 'size'] },
+  slit: { cat: 'Filtres & diffraction', name: 'Fente simple', kind: 'seg', params: { a: 60, size: 30 }, spec: [['a', { label: 'Largeur de fente a', type: 'number', min: 1, max: 2000, step: 1, unit: 'µm' }], 'size'] },
+  dslit: { cat: 'Filtres & diffraction', name: 'Fentes d\'Young', kind: 'seg', params: { d: 250, a: 40, size: 30 }, spec: [['d', { label: 'Écart entre fentes d', type: 'number', min: 2, max: 5000, step: 1, unit: 'µm' }], ['a', { label: 'Largeur de fente a', type: 'number', min: 1, max: 2000, step: 1, unit: 'µm' }], 'size'] },
+  grating: { cat: 'Filtres & diffraction', name: 'Réseau de diffraction', kind: 'seg', params: { lpm: 600, orders: 2, size: 25 }, spec: [['lpm', { label: 'Traits par mm', type: 'number', min: 1, max: 3600, step: 1 }], ['orders', { label: 'Ordres max ±m', type: 'range', min: 0, max: 5, step: 1 }], 'size'] },
+  absorber: { cat: 'Filtres & diffraction', name: 'Absorbeur (beam dump)', kind: 'seg', params: { size: 25 }, spec: ['size'] },
+
+  spad: { cat: 'Capteurs', name: 'Détecteur de photon unique (SPAD)', kind: 'det', color: '#7cf29a', params: { eta: 100, dark: 0, size: 10 }, spec: [['eta', { label: 'Efficacité quantique η', type: 'range', min: 0, max: 100, step: 1, unit: '%' }], ['dark', { label: 'Coups d\'obscurité par tir', type: 'range', min: 0, max: 5, step: 0.01, unit: '%' }], 'size'] },
+  power: { cat: 'Capteurs', name: 'Photodiode / puissance-mètre', kind: 'det', color: '#59c3ff', params: { size: 10 }, spec: ['size'] },
+  screen: { cat: 'Capteurs', name: 'Écran / caméra CCD', kind: 'det', color: '#ffffff', params: { size: 30, res: 600 }, spec: ['size', ['res', { label: 'Pixels', type: 'range', min: 50, max: 2000, step: 10 }]] },
+  spectro: { cat: 'Capteurs', name: 'Spectromètre', kind: 'det', color: '#ffb2f0', params: { size: 15 }, spec: ['size'] },
+  polarimeter: { cat: 'Capteurs', name: 'Polarimètre (Stokes)', kind: 'det', color: '#ffe066', params: { size: 10 }, spec: ['size'] },
+  probe: { cat: 'Capteurs', name: 'Sonde d\'état quantique (non destructive)', kind: 'probe', color: '#d78cff', params: { mode: 'pol', qname: 'Q1', size: 20 }, spec: [['mode', { label: 'Qubit lu', type: 'select', options: [['pol', 'Polarisation (H/V)'], ['rail0', 'Chemin : rail |0⟩'], ['rail1', 'Chemin : rail |1⟩']] }], ['qname', { label: 'Nom du qubit de chemin', type: 'text', showIf: p => p.mode !== 'pol' }], 'size'] },
+};
+const DET_TYPES = ['spad', 'power', 'screen', 'spectro', 'polarimeter'];
+
+function compSize(c) { return c.p.size || 30; }
+function glassVerts(c) {
+  const a = c.angle * D2R, n = [Math.cos(a), Math.sin(a)], t = [-Math.sin(a), Math.cos(a)];
+  let loc;
+  if (c.type === 'block') { const w = c.p.w / 2, h = c.p.h / 2; loc = [[-w, -h], [w, -h], [w, h], [-w, h]]; }
+  else { // triangle isocèle, sommet vers -x local (n), base vers +x
+    const s = c.p.side, A = (c.p.apex || 60) * D2R, hb = s * Math.sin(A / 2), H = s * Math.cos(A / 2);
+    loc = [[-2 * H / 3, 0], [H / 3, -hb], [H / 3, hb]];
+  }
+  return loc.map(([x, y]) => [c.x + n[0] * x + t[0] * y, c.y + n[1] * x + t[1] * y]);
+}
+
+function buildSurfaces(comps) {
+  const S = [];
+  for (const c of comps) {
+    const d = DEFS[c.type]; if (!d || d.kind === 'source') continue;
+    const a = c.angle * D2R, n = [Math.cos(a), Math.sin(a)], t = [-Math.sin(a), Math.cos(a)];
+    if (d.kind === 'glass') {
+      const V = glassVerts(c), cx = V.reduce((s, p) => s + p[0], 0) / V.length, cy = V.reduce((s, p) => s + p[1], 0) / V.length;
+      for (let i = 0; i < V.length; i++) {
+        const p1 = V[i], p2 = V[(i + 1) % V.length], e = v.norm(v.sub(p2, p1));
+        let no = [e[1], -e[0]]; const mid = [(p1[0] + p2[0]) / 2 - cx, (p1[1] + p2[1]) / 2 - cy];
+        if (v.dot(no, mid) < 0) no = v.neg(no);
+        S.push({ c, p1, p2, nOut: no, kind: 'glass' });
+      }
+    } else {
+      const h = compSize(c) / 2;
+      S.push({ c, p1: [c.x + t[0] * h, c.y + t[1] * h], p2: [c.x - t[0] * h, c.y - t[1] * h], n, t, kind: d.kind });
+    }
+  }
+  return S;
+}
+
+function raySeg(p, d, a, b) {
+  const ex = b[0] - a[0], ey = b[1] - a[1];
+  const den = d[0] * ey - d[1] * ex; if (Math.abs(den) < 1e-14) return null;
+  const wx = a[0] - p[0], wy = a[1] - p[1];
+  const t = (wx * ey - wy * ex) / den, u = (wx * d[1] - wy * d[0]) / den;
+  if (t > 1e-7 && u >= 0 && u <= 1) return { t, u };
+  return null;
+}
+function segBlocked(a, b, S, ignore) {
+  const d = v.sub(b, a), L = v.len(d); if (L < 1e-9) return false; const dn = [d[0] / L, d[1] / L];
+  for (const s of S) { if (ignore.has(s.c.id)) continue; const h = raySeg(a, dn, s.p1, s.p2); if (h && h.t < L - 1e-6) return true; }
+  return false;
+}
+
+function deflect(d, n, t, h, f) {
+  const nn = v.dot(d, n) < 0 ? v.neg(n) : n;
+  const dn = v.dot(d, nn), dt = v.dot(d, t);
+  const u = dt / dn - h / f;
+  return v.norm(v.add(nn, v.sc(t, u)));
+}
+function spectrumLams(p) {
+  if (p.spectrum === 'rgb') return [450, 532, 633];
+  if (p.spectrum === 'white') { const L = []; for (let l = 400; l <= 700; l += 25) L.push(l); return L; }
+  return [p.lambda];
+}
+const sinc = x => Math.abs(x) < 1e-9 ? 1 : Math.sin(x) / x;
+
+const MAXRAYS = 6000, MAXDEPTH = 150, FAR = 4000;
+
+function emitSource(c, stack) {
+  const d = DEFS[c.type], p = c.p, a = c.angle * D2R, dir = [Math.cos(a), Math.sin(a)], t = [-Math.sin(a), Math.cos(a)];
+  const lams = d.photon ? [p.lambda] : spectrumLams(p);
+  const pols = p.pol === 'U' ? [[polJones('H'), Math.SQRT1_2], [polJones('V'), Math.SQRT1_2]] : [[polJones(p.pol, p.polAngle), 1]];
+  let pos = [];
+  let w0 = (p.width || 1) / 2;
+  if (c.type === 'collimated') {
+    const N = Math.max(2, p.rays | 0), W = p.beamWidth;
+    for (let i = 0; i < N; i++) pos.push({ o: -W / 2 + W * i / (N - 1), d: dir });
+    w0 = Math.max(0.05, W / (N - 1) / 2);
+  } else if (c.type === 'point') {
+    const N = Math.max(2, p.rays | 0), sp = p.spread * D2R;
+    for (let i = 0; i < N; i++) { const ang = a - sp / 2 + (sp >= 2 * Math.PI - 1e-6 ? sp * i / N : sp * i / (N - 1)); pos.push({ o: 0, d: [Math.cos(ang), Math.sin(ang)] }); }
+    w0 = 0.15;
+  } else pos.push({ o: 0, d: dir });
+  const norm = 1 / Math.sqrt(lams.length * pos.length);
+  const disp = lams.length * pos.length;
+  lams.forEach(lam => {
+    const lamMM = lam * 1e-6;
+    pols.forEach(([E, wp], pi) => {
+      pos.forEach((ps, ri) => {
+        stack.push({
+          p: [c.x + t[0] * ps.o, c.y + t[1] * ps.o], d: ps.d, E: J.sr(E, wp * norm), lam, opl: 0, L: 0,
+          q: [0, -Math.PI * w0 * w0 / lamMM], n: 1, depth: 0, src: c.id,
+          group: c.id + '|' + lam + '|' + (p.pol === 'U' ? pi : '') + '|' + (pos.length > 1 ? ri : ''),
+          pw: d.photon ? 1 : p.power, photon: !!d.photon, disp, last: null,
+        });
+      });
+    });
+  });
+}
+
+function simulate(comps) {
+  const S = buildSurfaces(comps);
+  const sim = { S, segs: [], hits: {}, emitters: [], probes: {}, fans: [], rayCount: 0, truncated: false };
+  const stack = [];
+  for (const c of comps) if (DEFS[c.type] && DEFS[c.type].kind === 'source') emitSource(c, stack);
+  const clone = r => Object.assign({}, r);
+  while (stack.length) {
+    if (sim.rayCount++ > MAXRAYS) { sim.truncated = true; break; }
+    const r = stack.pop();
+    for (let iter = 0; iter < 400; iter++) {
+      if (r.depth > MAXDEPTH) { if (J.n2(r.E) > 1e-4) sim.truncated = true; break; }
+      if (J.n2(r.E) < 1e-9) break;
+      let best = null, bt = Infinity;
+      for (const s of S) {
+        const h = raySeg(r.p, r.d, s.p1, s.p2);
+        if (h && h.t < bt) { if (s === r.last && h.t < 1e-5) continue; bt = h.t; best = s; }
+      }
+      const L = best ? bt : FAR;
+      const end = [r.p[0] + r.d[0] * L, r.p[1] + r.d[1] * L];
+      sim.segs.push({ a: r.p, b: end, lam: r.lam, I: J.n2(r.E) * r.disp, src: r.src, s0: r.L, photon: r.photon });
+      r.opl += r.n * L; r.L += L; r.q = [r.q[0] + L, r.q[1]];
+      if (!best) break;
+      r.p = end; r.last = best; r.depth++;
+      if (!interact(r, best, stack, sim, clone)) break;
+    }
+  }
+  return sim;
+}
+
+function lensQ(r, f, h) {
+  const iq = cinv(r.q); iq[0] -= 1 / f; r.q = cinv(iq);
+  r.opl -= h * h / (2 * f);
+}
+
+function interact(r, s, stack, sim, clone) {
+  const c = s.c, p = c.p;
+  const h = s.t ? (r.p[0] - c.x) * s.t[0] + (r.p[1] - c.y) * s.t[1] : 0;
+  switch (c.type) {
+    case 'mirror': r.d = reflect(r.d, s.n); r.E = J.sr(r.E, -1); return true;
+    case 'concave': r.d = deflect(reflect(r.d, s.n), s.n, s.t, h, p.f || 1e9); lensQ(r, p.f || 1e9, h); r.E = J.sr(r.E, -1); return true;
+    case 'lens': r.d = deflect(r.d, s.n, s.t, h, p.f || 1e9); lensQ(r, p.f || 1e9, h); return true;
+    case 'bs': {
+      const R = Math.min(1, Math.max(0, p.R / 100));
+      if (R > 0) { const rr = clone(r); rr.d = reflect(r.d, s.n); rr.E = J.sc(r.E, [0, Math.sqrt(R)]); stack.push(rr); }
+      if (R < 1) { r.E = J.sr(r.E, Math.sqrt(1 - R)); return true; }
+      return false;
+    }
+    case 'pbs': {
+      const rr = clone(r); rr.d = reflect(r.d, s.n); rr.E = [C(0), cmul(r.E[1], [0, 1])]; stack.push(rr);
+      r.E = [r.E[0], C(0)]; return true;
+    }
+    case 'polarizer': r.E = J.mul(polarizerM(p.theta * D2R), r.E); return true;
+    case 'hwp': r.E = J.mul(retarderM(p.theta * D2R, Math.PI), r.E); return true;
+    case 'qwp': r.E = J.mul(retarderM(p.theta * D2R, Math.PI / 2), r.E); return true;
+    case 'retarder': r.E = J.mul(retarderM(p.theta * D2R, p.delta * D2R), r.E); return true;
+    case 'rotator': r.E = J.mul(rotM(p.theta * D2R), r.E); return true;
+    case 'phase': r.E = J.sc(r.E, cexp(p.phi * D2R)); return true;
+    case 'filter': { const x = (r.lam - p.center) / (p.bw || 1); r.E = J.sr(r.E, Math.exp(-2 * Math.LN2 * x * x)); return true; } // T = exp(-4ln2 x²) → FWHM = bw
+    case 'nd': r.E = J.sr(r.E, Math.sqrt(Math.max(0, p.T) / 100)); return true;
+    case 'iris': return Math.abs(h) <= p.aperture / 2;
+    case 'absorber': return false;
+    case 'slit': case 'dslit': makeEmitters(r, s, h, sim); return false;
+    case 'grating': {
+      const nn = v.dot(r.d, s.n) < 0 ? v.neg(s.n) : s.n, sinI = v.dot(r.d, s.t), lamMM = r.lam * 1e-6;
+      const M = p.orders | 0, ords = [];
+      for (let m = -M; m <= M; m++) { const sm = sinI + m * lamMM * p.lpm; if (Math.abs(sm) < 0.9999) ords.push([m, sm, Math.pow(sinc(Math.PI * 0.3 * m), 2)]); }
+      const tot = ords.reduce((a, o) => a + o[2], 0);
+      for (const [m, sm, w] of ords) { const rr = clone(r); rr.d = v.add(v.sc(nn, Math.sqrt(1 - sm * sm)), v.sc(s.t, sm)); rr.E = J.sr(r.E, Math.sqrt(w / tot)); stack.push(rr); }
+      return false;
+    }
+    case 'probe': (sim.probes[c.id] = sim.probes[c.id] || []).push({ E: r.E, opl: r.opl, lam: r.lam, group: r.group, pw: r.pw, photon: r.photon, src: r.src }); return true;
+    case 'block': case 'prism': {
+      const entering = v.dot(r.d, s.nOut) < 0, ng = matIndex(p, r.lam);
+      const n1 = entering ? 1 : ng, n2 = entering ? ng : 1, N = entering ? s.nOut : v.neg(s.nOut);
+      const cosi = -v.dot(r.d, N), eta = n1 / n2, k2 = 1 - eta * eta * (1 - cosi * cosi);
+      const refl = reflect(r.d, N);
+      if (k2 < 0) { r.d = refl; return true; } // réflexion totale interne
+      const cost = Math.sqrt(k2);
+      const td = v.norm(v.add(v.sc(r.d, eta), v.sc(N, eta * cosi - cost)));
+      if (p.fresnel) {
+        const rs = (n1 * cosi - n2 * cost) / (n1 * cosi + n2 * cost), rp = (n2 * cosi - n1 * cost) / (n2 * cosi + n1 * cost);
+        const ts = 2 * n1 * cosi / (n1 * cosi + n2 * cost), tp = 2 * n1 * cosi / (n2 * cosi + n1 * cost), fac = Math.sqrt(n2 * cost / (n1 * cosi));
+        const rr = clone(r); rr.d = refl; rr.E = [csc(r.E[0], rp), csc(r.E[1], rs)];
+        if (J.n2(rr.E) > 1e-7) stack.push(rr);
+        r.E = [csc(r.E[0], tp * fac), csc(r.E[1], ts * fac)];
+      }
+      r.d = td; r.n = n2; return true;
+    }
+    default:
+      if (DET_TYPES.includes(c.type)) {
+        (sim.hits[c.id] = sim.hits[c.id] || []).push({ pt: r.p, d: r.d, E: r.E, q: r.q, opl: r.opl, lam: r.lam, group: r.group, pw: r.pw, photon: r.photon, src: r.src });
+        return false;
+      }
+      return false;
+  }
+}
+
+// Une fente devient une rangée de sources secondaires de Huygens (diffraction).
+function makeEmitters(r, s, h, sim) {
+  const c = s.c, p = c.p, lamMM = r.lam * 1e-6, k = 2 * Math.PI / lamMM;
+  const nn = v.dot(r.d, s.n) < 0 ? v.neg(s.n) : s.n, dt = v.dot(r.d, s.t), cosI = Math.abs(v.dot(r.d, s.n));
+  const a = p.a * 1e-3, centers = c.type === 'dslit' ? [-p.d * 5e-4, p.d * 5e-4] : [0];
+  const M = 12;
+  for (const off of centers) {
+    for (let j = 0; j < M; j++) {
+      const o = off - a / 2 + (j + 0.5) * a / M, D = o - h, z = D * dt, rho = D * cosI;
+      const q = [r.q[0] + z, r.q[1]], iq = cinv(q); if (iq[1] <= 0) continue;
+      const w2 = lamMM / (Math.PI * iq[1]);
+      const mag = Math.pow(2 / Math.PI, 0.25) * Math.pow(w2, -0.25) * Math.exp(-k * rho * rho * iq[1] / 2) * Math.sqrt(cosI) * (a / M);
+      if (mag < 1e-12) continue;
+      const ph = k * (r.opl + z) + k * rho * rho * iq[0] / 2;
+      sim.emitters.push({ pos: [c.x + s.t[0] * o, c.y + s.t[1] * o], n: nn, E: J.sc(r.E, csc(cexp(ph), mag)), lam: r.lam, group: r.group, pw: r.pw, photon: r.photon, src: r.src, slit: c.id, s0: r.L });
+    }
+    // éventail affiché
+    const th = Math.min(80 * D2R, 2.5 * lamMM / a);
+    const env = Math.exp(-2 * ((off - h) * cosI) ** 2 / (2 * lamMM / (Math.PI * Math.max(1e-12, cinv(r.q)[1]))));
+    sim.fans.push({ pos: [c.x + s.t[0] * off, c.y + s.t[1] * off], n: nn, t: s.t, th, lam: r.lam, I: J.n2(r.E) * r.disp * env, slit: c.id, s0: r.L, photon: r.photon, src: r.src });
+  }
+}
+
+// ---------- Capteurs : échantillonnage cohérent du champ sur la surface du détecteur ----------
+function computeDetector(c, sim, N) {
+  const a = c.angle * D2R, n = [Math.cos(a), Math.sin(a)], t = [-Math.sin(a), Math.cos(a)], L = compSize(c);
+  const beams = sim.hits[c.id] || [];
+  const ems = sim.emitters;
+  if (!N) {
+    let wmin = 1e9;
+    for (const b of beams) { const iq = cinv(b.q); if (iq[1] > 0) wmin = Math.min(wmin, Math.sqrt(b.lam * 1e-6 / (Math.PI * iq[1]))); }
+    N = Math.min(3000, Math.max(ems.length ? 400 : 64, Math.ceil(L / (wmin / 4))));
+  }
+  const dx = L / N;
+  const groups = new Map();
+  const G = (o) => { let g = groups.get(o.group); if (!g) { g = { lam: o.lam, pw: o.pw, photon: o.photon, src: o.src, F: new Float64Array(4 * N) }; groups.set(o.group, g); } return g; };
+  for (const b of beams) {
+    const g = G(b), lamMM = b.lam * 1e-6, k = 2 * Math.PI / lamMM;
+    const dt = v.dot(b.d, t), cosI = Math.abs(v.dot(b.d, n)), sq = Math.sqrt(cosI);
+    const h0 = (b.pt[0] - c.x) * t[0] + (b.pt[1] - c.y) * t[1];
+    for (let j = 0; j < N; j++) {
+      const o = -L / 2 + (j + 0.5) * dx, D = o - h0, z = D * dt, rho = D * cosI;
+      const iq = cinv([b.q[0] + z, b.q[1]]); if (iq[1] <= 0) continue;
+      const ex = k * rho * rho * iq[1] / 2; if (ex > 40) continue;
+      const w2 = lamMM / (Math.PI * iq[1]);
+      const mag = Math.pow(2 / Math.PI, 0.25) * Math.pow(w2, -0.25) * Math.exp(-ex) * sq;
+      const ph = k * (b.opl + z) + k * rho * rho * iq[0] / 2, cp = Math.cos(ph) * mag, sp = Math.sin(ph) * mag;
+      const F = g.F;
+      F[4 * j] += b.E[0][0] * cp - b.E[0][1] * sp; F[4 * j + 1] += b.E[0][0] * sp + b.E[0][1] * cp;
+      F[4 * j + 2] += b.E[1][0] * cp - b.E[1][1] * sp; F[4 * j + 3] += b.E[1][0] * sp + b.E[1][1] * cp;
+    }
+  }
+  if (ems.length) {
+    // visibilité : pour chaque fente, test d'occultation sur un sous-échantillonnage puis interpolation par plus proche
+    const ign = new Set([c.id]);
+    const vis = new Map();
+    for (const e of ems) {
+      const key = e.slit + '@' + e.pos[0].toFixed(3) + ',' + e.pos[1].toFixed(3);
+      if (vis.has(e.slit)) continue;
+      ign.add(e.slit);
+      const step = Math.max(1, Math.floor(N / 120)), arr = new Uint8Array(N);
+      for (let j = 0; j < N; j += step) {
+        const o = -L / 2 + (j + 0.5) * dx, x = [c.x + t[0] * o, c.y + t[1] * o];
+        const bl = segBlocked(e.pos, x, sim.S, new Set([c.id, e.slit]));
+        for (let q = j; q < Math.min(N, j + step); q++) arr[q] = bl ? 0 : 1;
+      }
+      vis.set(e.slit, arr);
+    }
+    for (const e of ems) {
+      const g = G(e), lamMM = e.lam * 1e-6, k = 2 * Math.PI / lamMM, va = vis.get(e.slit);
+      for (let j = 0; j < N; j++) {
+        if (!va[j]) continue;
+        const o = -L / 2 + (j + 0.5) * dx, x = c.x + t[0] * o, y = c.y + t[1] * o;
+        const rx = x - e.pos[0], ry = y - e.pos[1], R = Math.hypot(rx, ry); if (R < 1e-6) continue;
+        const cosT = (rx * e.n[0] + ry * e.n[1]) / R; if (cosT <= 0) continue;
+        const cosD = Math.abs((rx * n[0] + ry * n[1]) / R);
+        const mag = (1 + cosT) / 2 * Math.sqrt(1 / (lamMM * R)) * Math.sqrt(cosD);
+        const ph = k * R - Math.PI / 4, cp = Math.cos(ph) * mag, sp = Math.sin(ph) * mag;
+        const F = g.F;
+        F[4 * j] += e.E[0][0] * cp - e.E[0][1] * sp; F[4 * j + 1] += e.E[0][0] * sp + e.E[0][1] * cp;
+        F[4 * j + 2] += e.E[1][0] * cp - e.E[1][1] * sp; F[4 * j + 3] += e.E[1][0] * sp + e.E[1][1] * cp;
+      }
+    }
+  }
+  // agrégation
+  const res = { N, dx, L, prof: new Float64Array(N), profRGB: [new Float64Array(N), new Float64Array(N), new Float64Array(N)], power: 0, prob: 0, probBySrc: {}, probProf: {}, stokes: [0, 0, 0, 0], stokesQ: [0, 0, 0, 0], spec: {}, specQ: {} };
+  for (const g of groups.values()) {
+    const F = g.F; let tot = 0; const S = [0, 0, 0, 0];
+    const rgb = lamRGB(g.lam);
+    let pp = null; if (g.photon) { pp = res.probProf[g.src] || (res.probProf[g.src] = new Float64Array(N)); }
+    for (let j = 0; j < N; j++) {
+      const xr = F[4 * j], xi = F[4 * j + 1], yr = F[4 * j + 2], yi = F[4 * j + 3];
+      const ix = xr * xr + xi * xi, iy = yr * yr + yi * yi, I = (ix + iy) * dx;
+      tot += I; S[0] += I; S[1] += (ix - iy) * dx; S[2] += 2 * (xr * yr + xi * yi) * dx; S[3] += 2 * (xr * yi - xi * yr) * dx;
+      if (g.photon) pp[j] += I; else { const Ip = I * g.pw; res.prof[j] += Ip; res.profRGB[0][j] += Ip * rgb[0]; res.profRGB[1][j] += Ip * rgb[1]; res.profRGB[2][j] += Ip * rgb[2]; }
+    }
+    if (g.photon) {
+      res.prob += tot; res.probBySrc[g.src] = (res.probBySrc[g.src] || 0) + tot; res.specQ[g.lam] = (res.specQ[g.lam] || 0) + tot;
+      for (let i = 0; i < 4; i++) res.stokesQ[i] += S[i];
+    } else {
+      res.power += tot * g.pw; res.spec[g.lam] = (res.spec[g.lam] || 0) + tot * g.pw;
+      for (let i = 0; i < 4; i++) res.stokes[i] += S[i] * g.pw;
+    }
+  }
+  return res;
+}
+
+// Sondes non destructives : état de polarisation local et qubits de chemin (dual-rail)
+function probeStates(comps, sim) {
+  const out = {}, rails = {};
+  for (const c of comps) {
+    if (c.type !== 'probe') continue;
+    const recs = sim.probes[c.id] || [];
+    const groups = new Map();
+    for (const r of recs) {
+      const k = 2 * Math.PI / (r.lam * 1e-6), ph = cexp(k * r.opl);
+      const A = J.sc(r.E, ph);
+      const g = groups.get(r.group) || { E: [C(0), C(0)], pw: r.pw, photon: r.photon, lam: r.lam };
+      g.E = [cadd(g.E[0], A[0]), cadd(g.E[1], A[1])]; groups.set(r.group, g);
+    }
+    const S = [0, 0, 0, 0]; let probQ = 0, powC = 0;
+    for (const g of groups.values()) {
+      const [x, y] = g.E, w = g.photon ? 1 : g.pw;
+      S[0] += w * (ca2(x) + ca2(y)); S[1] += w * (ca2(x) - ca2(y));
+      const xy = cmul(cconj(x), y); S[2] += w * 2 * xy[0]; S[3] += w * 2 * xy[1];
+      if (g.photon) probQ += ca2(x) + ca2(y); else powC += g.pw * (ca2(x) + ca2(y));
+    }
+    out[c.id] = { stokes: S, probQ, powC, groups };
+    if (c.p.mode !== 'pol') { const q = rails[c.p.qname] || (rails[c.p.qname] = { r0: [], r1: [] }); q[c.p.mode === 'rail0' ? 'r0' : 'r1'].push(c.id); }
+  }
+  // qubits de chemin : matrice densité réduite (trace sur la polarisation), par groupe cohérent
+  const qubits = {};
+  for (const [name, q] of Object.entries(rails)) {
+    let r00 = 0, r11 = 0, r01 = [0, 0];
+    const collect = ids => { const m = new Map(); for (const id of ids) for (const [k, g] of (out[id] ? out[id].groups : [])) { const e = m.get(k) || { E: [C(0), C(0)], w: g.photon ? 1 : g.pw }; e.E = [cadd(e.E[0], g.E[0]), cadd(e.E[1], g.E[1])]; m.set(k, e); } return m; };
+    const A = collect(q.r0), B = collect(q.r1);
+    const keys = new Set([...A.keys(), ...B.keys()]);
+    for (const k of keys) {
+      const a = A.get(k), b = B.get(k), w = (a || b).w;
+      const ea = a ? a.E : [C(0), C(0)], eb = b ? b.E : [C(0), C(0)];
+      r00 += w * (ca2(ea[0]) + ca2(ea[1])); r11 += w * (ca2(eb[0]) + ca2(eb[1]));
+      const x = cadd(cmul(ea[0], cconj(eb[0])), cmul(ea[1], cconj(eb[1]))); r01 = cadd(r01, csc(x, w));
+    }
+    const T = r00 + r11;
+    qubits[name] = T > 1e-12 ? { x: 2 * r01[0] / T, y: -2 * r01[1] / T, z: (r00 - r11) / T, T, p0: r00 / T, p1: r11 / T, ok: q.r0.length && q.r1.length } : { x: 0, y: 0, z: 0, T: 0, ok: false };
+  }
+  return { probes: out, qubits };
+}
+
+function lamRGB(l) {
+  let r = 0, g = 0, b = 0;
+  if (l < 380) { r = 0.4; b = 0.6; }
+  else if (l < 440) { r = -(l - 440) / 60; b = 1; }
+  else if (l < 490) { g = (l - 440) / 50; b = 1; }
+  else if (l < 510) { g = 1; b = -(l - 510) / 20; }
+  else if (l < 580) { r = (l - 510) / 70; g = 1; }
+  else if (l < 645) { r = 1; g = -(l - 645) / 65; }
+  else if (l <= 780) { r = 1; }
+  else { r = 0.6; g = 0.1; b = 0.1; } // infrarouge : affiché rouge sombre
+  let f = 1;
+  if (l > 700 && l <= 780) f = 0.35 + 0.65 * (780 - l) / 80; else if (l < 420 && l >= 380) f = 0.35 + 0.65 * (l - 380) / 40;
+  return [Math.max(0, r) * f, Math.max(0, g) * f, Math.max(0, b) * f];
+}
+
+if (typeof module !== 'undefined' && typeof window === 'undefined') module.exports = { simulate, computeDetector, probeStates, DEFS, MATERIALS, lamRGB, matIndex };
+
+// ===================== LANGUES (FR / EN) =====================
+let LANG = 'fr';
+try { LANG = localStorage.getItem('banc-optique-lang') || ((navigator.language || 'fr').toLowerCase().startsWith('fr') ? 'fr' : 'en'); } catch (e) { }
+const L = (fr, en) => LANG === 'en' ? en : fr;
+const EN = {
+  // catégories
+  'Sources': 'Sources', 'Miroirs & séparateurs': 'Mirrors & splitters', 'Lentilles & verres': 'Lenses & glass', 'Polarisation & phase': 'Polarization & phase', 'Filtres & diffraction': 'Filters & diffraction', 'Capteurs': 'Sensors',
+  // composants
+  'Laser': 'Laser', 'Faisceau large': 'Wide beam', 'Source ponctuelle': 'Point source', 'Source de photons uniques': 'Single-photon source',
+  'Miroir plan': 'Flat mirror', 'Miroir courbe': 'Curved mirror', 'Lame séparatrice': 'Beam splitter', 'Cube séparateur polarisant': 'Polarizing beam splitter (PBS)',
+  'Lentille mince': 'Thin lens', 'Bloc de verre': 'Glass block', 'Prisme': 'Prism',
+  'Polariseur': 'Polarizer', 'Lame demi-onde λ/2': 'Half-wave plate λ/2', "Lame quart d'onde λ/4": 'Quarter-wave plate λ/4', 'Lame à retard variable': 'Variable retarder', 'Rotateur (Faraday)': 'Rotator (Faraday)', 'Déphaseur φ': 'Phase shifter φ',
+  'Filtre passe-bande': 'Band-pass filter', 'Densité neutre': 'Neutral density', 'Diaphragme (iris)': 'Iris diaphragm', 'Fente simple': 'Single slit', "Fentes d'Young": 'Double slit (Young)', 'Réseau de diffraction': 'Diffraction grating', 'Absorbeur (beam dump)': 'Beam dump',
+  'Détecteur de photon unique (SPAD)': 'Single-photon detector (SPAD)', 'Photodiode / puissance-mètre': 'Photodiode / power meter', 'Écran / caméra CCD': 'Screen / CCD camera', 'Spectromètre': 'Spectrometer', 'Polarimètre (Stokes)': 'Polarimeter (Stokes)', "Sonde d'état quantique (non destructive)": 'Quantum state probe (non-destructive)',
+  // paramètres
+  "Longueur d'onde λ": 'Wavelength λ', 'Puissance': 'Power', 'Polarisation': 'Polarization', 'Angle de polarisation': 'Polarization angle', 'Spectre': 'Spectrum', 'Diamètre du faisceau (1/e²)': 'Beam diameter (1/e²)', 'Taille': 'Size', "Angle de l'axe θ": 'Axis angle θ',
+  'Largeur du faisceau': 'Beam width', 'Nombre de rayons': 'Number of rays', 'Ouverture angulaire': 'Angular spread', 'Focale f (négative = convexe)': 'Focal length f (negative = convex)', 'Réflectivité R': 'Reflectivity R',
+  'Focale f (négative = divergente)': 'Focal length f (negative = diverging)', 'Épaisseur': 'Thickness', 'Hauteur': 'Height', 'Matériau': 'Material', 'Indice n': 'Index n', 'Réflexions partielles (Fresnel)': 'Partial reflections (Fresnel)', 'Angle au sommet': 'Apex angle',
+  'Retard δ': 'Retardance δ', 'Rotation': 'Rotation', 'Déphasage φ': 'Phase φ', 'Centre': 'Center', 'Largeur (FWHM)': 'Width (FWHM)', 'Transmission': 'Transmission', 'Ouverture': 'Aperture', 'Largeur de fente a': 'Slit width a', 'Écart entre fentes d': 'Slit separation d',
+  'Traits par mm': 'Lines per mm', 'Ordres max ±m': 'Max orders ±m', 'Efficacité quantique η': 'Quantum efficiency η', "Coups d'obscurité par tir": 'Dark counts per shot', 'Pixels': 'Pixels', 'Qubit lu': 'Qubit read', 'Nom du qubit de chemin': 'Path-qubit name',
+  // options
+  'H (horizontale) |0⟩': 'H (horizontal) |0⟩', 'V (verticale) |1⟩': 'V (vertical) |1⟩', 'D (+45°) |+⟩': 'D (+45°) |+⟩', 'A (−45°) |−⟩': 'A (−45°) |−⟩', 'R (circulaire droite) |+i⟩': 'R (right circular) |+i⟩', 'L (circulaire gauche) |−i⟩': 'L (left circular) |−i⟩', 'Linéaire, angle libre': 'Linear, free angle', 'Non polarisée (mélange)': 'Unpolarized (mixture)',
+  'Monochromatique': 'Monochromatic', 'RVB (3 raies)': 'RGB (3 lines)', 'Blanche (continu, 13 raies)': 'White (13 lines)',
+  'Verre crown BK7': 'BK7 crown glass', 'Verre flint F2': 'F2 flint glass', 'Flint dense SF11': 'SF11 dense flint', 'Silice fondue': 'Fused silica', 'Eau': 'Water', 'Diamant': 'Diamond', 'Indice personnalisé': 'Custom index',
+  'Polarisation (H/V)': 'Polarization (H/V)', 'Chemin : rail |0⟩': 'Path: rail |0⟩', 'Chemin : rail |1⟩': 'Path: rail |1⟩',
+  // étiquettes des expériences
+  'Caméra': 'Camera', 'Écran': 'Screen', 'Sonde': 'Probe', 'Marqueur': 'Marker', 'Gomme1': 'Eraser1', 'Gomme2': 'Eraser2', 'Réfléchi': 'Reflected', 'Transmis': 'Transmitted', 'Bloc': 'Block',
+};
+const tr = s => (LANG === 'en' && EN[s] !== undefined) ? EN[s] : s;
+const PREFIX_EN = { laser: 'Laser', collimated: 'Beam', point: 'Lamp', photon: 'S', mirror: 'M', concave: 'CM', bs: 'BS', pbs: 'PBS', lens: 'L', block: 'Block', prism: 'Prism', polarizer: 'P', hwp: 'λ/2', qwp: 'λ/4', retarder: 'Ret', rotator: 'Rot', phase: 'φ', filter: 'Filter', nd: 'ND', iris: 'Iris', slit: 'Slit', dslit: 'Young', grating: 'Grating', absorber: 'Dump', spad: 'D', power: 'PD', screen: 'Screen', spectro: 'Spectro', polarimeter: 'Pol', probe: 'Probe' };
+const DESC_EN = {
+  laser: 'Coherent Gaussian beam. The complex q parameter tracks divergence and focusing; the phase e^{ikL} is tracked along the optical path, so interference is real.',
+  collimated: 'Wide beam represented by several mutually incoherent rays (for geometric optics: telescopes, imaging).',
+  point: 'Point source (lamp): fan of incoherent rays. Use 360° to emit in all directions.',
+  photon: 'Emits <b>one photon at a time</b>. Its amplitude travels down every path (superposition); a sensor only "clicks" at measurement, with Born probability |ψ|². Polarization H = |0⟩, V = |1⟩.',
+  mirror: 'Perfect flat mirror (π phase shift).', concave: 'Paraxial spherical mirror with focal length f.',
+  bs: 'Beam splitter: transmitted √(1−R), reflected i·√R (unitary convention). At 50 % it acts as a Hadamard gate on a path qubit.',
+  pbs: 'Polarizing beam splitter: transmits H (|0⟩), reflects V (|1⟩). Used to measure a polarization qubit in the H/V basis.',
+  lens: 'Ideal thin lens: paraxial deflection and Gaussian-beam transform 1/q → 1/q − 1/f.',
+  block: 'Real interfaces: Snell\'s law, dispersion (Cauchy law), total internal reflection and s/p Fresnel coefficients (Brewster angle).',
+  prism: 'Dispersive prism: the index depends on λ (Cauchy law), white light splits into colors.',
+  polarizer: 'Linear polarizer, axis at θ from H. Malus\'s law: I = I₀cos²θ. For a photon it is a projective measurement (absorbs or transmits).',
+  hwp: 'Half-wave plate, fast axis at θ. θ = 22.5° → <b>Hadamard</b> gate; θ = 45° → <b>X</b> (NOT) gate; θ = 0° → <b>Z</b> gate.',
+  qwp: 'Quarter-wave plate, fast axis at θ. θ = 0° → <b>S</b> gate; θ = 45° turns linear ↔ circular.',
+  retarder: 'Plate with arbitrary retardance δ (axis at θ): arbitrary rotation of the polarization qubit.',
+  rotator: 'Rotates the polarization by a fixed angle (Faraday effect / optical activity).',
+  phase: 'Adds a phase e^{iφ} to the beam (piezo stage, variable-thickness plate). Phase gate on a path qubit.',
+  filter: 'Gaussian interference filter centered on λc.', nd: 'Grey attenuator. For a photon: transmission probability T.',
+  iris: 'Iris: blocks everything outside the aperture.',
+  slit: 'Slit: every point becomes a secondary Huygens source → sinc² diffraction pattern.',
+  dslit: 'Young\'s double slit: interference between two sets of Huygens sources. Fringe spacing is λD/d. The drawing is schematic; real dimensions are in µm.',
+  grating: 'Transmission grating: sin θm = sin θi + m·λ·N.', absorber: 'Beam dump.',
+  spad: 'Single-photon avalanche detector. In photon mode it counts clicks; with a laser it gives the photon flux.',
+  power: 'Photodiode: integrated optical power (coherent sum of the fields over its whole surface).',
+  screen: 'Linear screen / camera: intensity profile. In photon mode, impacts build up one by one.',
+  spectro: 'Spectrometer: power distribution per wavelength.',
+  polarimeter: 'Polarimeter: Stokes parameters, ellipse and Poincaré sphere (= Bloch sphere of the polarization qubit).',
+  probe: 'Ideal <b>non-destructive</b> probe (does not exist in reality: it is a simulation tool). It reads the state without measuring it: polarization → Bloch sphere; or, with two probes "rail 0" and "rail 1" sharing a name, the <b>path qubit</b> (with its purity).',
+};
+const PRESETS_EN = {
+  mzi: ['Mach-Zehnder: path qubit', 'A single photon enters a 50/50 beam splitter: it is in a superposition of both arms (<b>path qubit</b>, read by the Q1 probes). The second splitter makes both paths interfere. With φ = 0, <b>all</b> photons go to D1; tune the <b>phase shifter φ</b> to send the qubit to D2 (φ = 180°) or 50/50 (φ = 90°). Start the continuous stream to check the statistics.'],
+  whichpath: ['"Which-path" information and quantum eraser', 'Same Mach-Zehnder, but a λ/2 plate at 45° tags the lower arm (H → V). Polarization reveals the path: interference disappears (D1 and D2 stay at 50 % whatever φ) and the path qubit loses its coherence (|r| = 0: it is entangled with polarization). <b>Quantum eraser</b>: set both polarizers in front of the detectors to 45° to erase the information; interference returns for the photons that pass.'],
+  hadamard: ['Polarization qubit: Hadamard gate and measurement', 'The photon starts in |H⟩ = |0⟩. The λ/2 plate at 22.5° is a <b>Hadamard</b> gate: it prepares |+⟩ = (|0⟩+|1⟩)/√2 (see the probe\'s Bloch sphere). The PBS + two SPADs form a <b>measurement in the {|0⟩,|1⟩} basis</b>: 50 % / 50 %. Rotate the plate (0° → Z, 45° → X) or change the source state.'],
+  gates: ['Gate chain: H · Z · H = X', 'A <b>chain of objects</b> implementing a small quantum circuit on a polarization qubit: Hadamard (λ/2 at 22.5°), Z (λ/2 at 0°), Hadamard. The result is a NOT gate: |0⟩ → |1⟩, every photon lands on D|1⟩. The probes show the state after each gate. Replace Z with a λ/4 plate (S gate) or a retarder for any rotation.'],
+  youngPhoton: ['Young\'s slits, photon by photon', 'Each photon goes through both slits at once and appears at a single point on the screen. Click <b>▶ Continuous stream</b>: random impacts (dots on the screen, green histogram) slowly build the interference pattern predicted by |ψ|² (purple curve). Change d or a to change the fringe spacing λD/d. Many photons are stopped by the plate: that is expected.'],
+  young: ['Young\'s slits (laser)', 'Green laser on two 40 µm slits 250 µm apart, screen at 500 mm: expected fringe spacing λD/d ≈ 1.06 mm under each slit\'s diffraction envelope (sinc²). Swap for a single slit to see diffraction alone.'],
+  michelson: ['Michelson interferometer', 'Mirror M1 is tilted by 0.03°: the two returning beams meet at a small angle and produce straight fringes on the camera (spacing ≈ λ/2α ≈ 0.6 mm). Set M1\'s angle to 0 for a flat tint, then move M1 by a few tenths of a mm (arrows or the x field) to see the intensity oscillate.'],
+  prism: ['Dispersion by a prism', 'White light (13 lines from 400 to 700 nm) through an SF11 flint prism: the index depends on λ (Cauchy law), violet bends more than red. The screen shows the rainbow. Change the material (diamond, water…) or rotate the prism.'],
+  grating: ['Diffraction grating', '600 lines/mm grating lit with RGB light, followed by an f = 150 mm lens: each order ±1, ±2 gives a colored line on the screen at the focal plane (sin θ = mλN). This is how a spectrometer works.'],
+  kepler: ['Lenses: Keplerian telescope', 'Two converging lenses (f₁ = 150 mm, f₂ = 50 mm) separated by f₁ + f₂: the parallel beam exits parallel, 3× narrower (magnification f₁/f₂). Move the second lens to see the beam converge or diverge.'],
+  imaging: ['Image formation (2f – 2f)', 'A point source at 2f from an f = 100 mm lens gives a sharp image at 2f on the other side. Move the screen or the source to see the image blur.'],
+  malus: ['Malus\'s law', 'Unpolarized light → polarizer at 0° (half passes) → polarizer at θ → I = I₀/2·cos²θ. Vary P2\'s angle. The probe between P1 and P2 shows the polarization state. Bonus: slide a λ/4 plate between them to make the polarization circular.'],
+  brewster: ['Brewster angle and Fresnel', 'Unpolarized light on a BK7 block tilted at Brewster\'s angle: the p component (H, in-plane) is not reflected at all, so the reflected beam is <b>V-polarized</b> (S₁ = −1 on the polarimeter). Change the block angle to see the H reflection come back.'],
+  fabry: ['Fabry-Pérot cavity', 'Two partial mirrors (R = 90 %): light makes dozens of round trips that interfere. Only certain round-trip phases are transmitted (sharp resonances). Slide the phase shifter φ between 0 and 180°: transmission goes from ≈ 0.3 % to ≈ 86 % (not 100 %: the Gaussian beam diverges a bit on every round trip, as in a real plane-plane cavity; try a wider beam).'],
+};
+const HELP_EN = `<h2>Quantum optics bench — user guide</h2>
+<p>A 2D optical table seen from above. Place sources, components and sensors, chain them together, and the engine propagates light in real time.</p>
+<h3>What the engine computes</h3>
+<ul>
+<li><b>Geometric optics</b>: reflection, refraction (Snell's law), total internal reflection, lenses and curved mirrors, dispersion via the Cauchy law (n depends on λ).</li>
+<li><b>Wave optics</b>: each beam keeps its complex amplitude and phase e^{ikL} along the optical path. Sensors add the <b>fields</b> (not intensities) of coherent beams: fringes, Michelson, Fabry-Pérot and Mach-Zehnder appear on their own. Laser beams are Gaussian (q parameter: divergence, focusing, wavefront curvature).</li>
+<li><b>Diffraction</b>: slits become rows of Huygens sources; the grating sends light into its orders m.</li>
+<li><b>Polarization</b>: Jones calculus (polarizers, λ/2 and λ/4 plates, arbitrary retarder, rotator, PBS, s/p Fresnel coefficients).</li>
+<li><b>Quantum (one photon at a time)</b>: the probability amplitude follows the same calculation. When you emit a photon, a single sensor clicks, drawn at random by the Born rule P = |ψ|². Losses (dumps, polarizers, SPAD efficiency η) are counted.</li>
+</ul>
+<h3>Photonic qubits</h3>
+<table><tr><th>Gate</th><th>Object</th></tr>
+<tr><td>Hadamard H</td><td>λ/2 plate, θ = 22.5°</td></tr><tr><td>X (NOT)</td><td>λ/2 plate, θ = 45°</td></tr><tr><td>Z</td><td>λ/2 plate, θ = 0°</td></tr>
+<tr><td>S (phase i)</td><td>λ/4 plate, θ = 0°</td></tr><tr><td>Any rotation</td><td>Retarder (θ, δ) or rotator</td></tr>
+<tr><td>Z measurement (polarization)</td><td>PBS + 2 SPADs</td></tr>
+<tr><td>Path qubit</td><td>50/50 beam splitter (≈ Hadamard), phase shifter φ (phase), Mach-Zehnder (full rotation)</td></tr></table>
+<p>Encoding: polarization H = |0⟩, V = |1⟩, D = |+⟩, R = |+i⟩. On the Bloch sphere, z = H/V, x = D/A, y = R/L. The <b>state probe</b> reads the state without disturbing it (a simulation tool, it does not exist in reality). Two probes "rail 0" and "rail 1" with the same name read a path qubit, with its coherence (|r| &lt; 1 if the qubit is entangled with something else).</p>
+<h3>Sensors</h3>
+<p>Photodiode (power, photon flux), SPAD (clicks, efficiency, dark counts), screen/camera (intensity profile and accumulated impacts), spectrometer, polarimeter (Stokes, ellipse, Poincaré sphere), quantum state probe.</p>
+<h3>Honest limits</h3>
+<ul><li>2D table; lens optics is paraxial (no aberrations).</li>
+<li>One photon at a time: no entangled pairs (SPDC), Hong-Ou-Mandel or two-photon coincidences yet.</li>
+<li>Light diffracted by a slit is not refocused by a lens placed after it (it goes straight to the sensors).</li>
+<li>No "quantum matter" (atoms, energy levels, resonant absorption): materials are described by their index and transmission.</li></ul>
+<h3>Controls</h3>
+<p>Wheel = zoom · drag background = pan · drag an object = move it · ↻ handle = rotate (Shift: no snapping) · <kbd>R</kbd>/<kbd>E</kbd> ±15° · <kbd>Del</kbd> · <kbd>Ctrl+D</kbd> · <kbd>Ctrl+Z</kbd> · <kbd>Space</kbd> = 1 photon. The setup is saved automatically in your browser; use Export/Import to keep it in a file.</p>
+<div class="btns"><button onclick="document.getElementById('mHelp').classList.remove('show')">Close</button></div>`;
+
+// ===================== INTERFACE =====================
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const PREFIX = { laser: 'Laser', collimated: 'Faisceau', point: 'Lampe', photon: 'S', mirror: 'M', concave: 'MC', bs: 'BS', pbs: 'PBS', lens: 'L', block: 'Bloc', prism: 'Prisme', polarizer: 'P', hwp: 'λ/2', qwp: 'λ/4', retarder: 'Ret', rotator: 'Rot', phase: 'φ', filter: 'Filtre', nd: 'ND', iris: 'Iris', slit: 'Fente', dslit: 'Young', grating: 'Réseau', absorber: 'Abs', spad: 'D', power: 'PD', screen: 'Écran', spectro: 'Spectro', polarimeter: 'Pola', probe: 'Sonde' };
+const DESC = {
+  laser: 'Faisceau gaussien cohérent. Le paramètre complexe q suit la divergence et la focalisation ; la phase e^{ikL} est suivie le long du chemin optique, donc les interférences sont réelles.',
+  collimated: 'Faisceau large représenté par plusieurs rayons mutuellement incohérents (pour l\'optique géométrique : télescopes, imagerie).',
+  point: 'Source ponctuelle (lampe) : éventail de rayons incohérents. Mets 360° pour une émission dans toutes les directions.',
+  photon: 'Émet <b>un photon à la fois</b>. Son amplitude se propage dans tous les chemins (superposition) ; un capteur ne « clique » qu\'au moment de la mesure, avec la probabilité de Born |ψ|². Polarisation H = |0⟩, V = |1⟩.',
+  mirror: 'Miroir plan parfait (déphasage π).', concave: 'Miroir sphérique paraxial de focale f.',
+  bs: 'Lame séparatrice : transmis √(1−R), réfléchi i·√R (convention unitaire). À 50 % elle joue le rôle d\'une porte de Hadamard sur un qubit de chemin.',
+  pbs: 'Cube séparateur polarisant : transmet H (|0⟩), réfléchit V (|1⟩). Sert à mesurer un qubit de polarisation dans la base H/V.',
+  lens: 'Lentille mince idéale : déviation paraxiale et transformation du faisceau gaussien 1/q → 1/q − 1/f.',
+  block: 'Dioptres réels : loi de Snell-Descartes, dispersion (loi de Cauchy), réflexion totale interne et coefficients de Fresnel s/p (angle de Brewster).',
+  prism: 'Prisme dispersif : l\'indice dépend de λ (loi de Cauchy), la lumière blanche se décompose.',
+  polarizer: 'Polariseur linéaire, axe à θ de H. Loi de Malus : I = I₀cos²θ. Pour un photon c\'est une mesure projective (absorbe ou laisse passer).',
+  hwp: 'Lame λ/2, axe rapide à θ. θ = 22,5° → porte <b>Hadamard</b> ; θ = 45° → porte <b>X</b> (NOT) ; θ = 0° → porte <b>Z</b>.',
+  qwp: 'Lame λ/4, axe rapide à θ. θ = 0° → porte <b>S</b> ; θ = 45° transforme linéaire ↔ circulaire.',
+  retarder: 'Lame à retard δ quelconque (axe à θ) : rotation arbitraire du qubit de polarisation.',
+  rotator: 'Rotation de la polarisation d\'un angle fixe (effet Faraday / activité optique).',
+  phase: 'Ajoute une phase e^{iφ} au faisceau (cale piézo, lame d\'épaisseur variable). Porte de phase sur un qubit de chemin.',
+  filter: 'Filtre interférentiel gaussien centré sur λc.', nd: 'Atténuateur gris. Pour un photon : probabilité de transmission T.',
+  iris: 'Diaphragme : bloque tout ce qui passe en dehors de l\'ouverture.',
+  slit: 'Fente : chaque point devient une source secondaire de Huygens → figure de diffraction en sinc².',
+  dslit: 'Fentes d\'Young : interférence entre deux ensembles de sources de Huygens. L\'interfrange vaut λD/d. Le dessin est schématique, les dimensions réelles sont en µm.',
+  grating: 'Réseau en transmission : sin θm = sin θi + m·λ·N.', absorber: 'Piège à faisceau.',
+  spad: 'Détecteur de photon unique (avalanche). En mode photon il compte les clics ; avec un laser il donne le flux de photons.',
+  power: 'Photodiode : puissance optique intégrée (somme cohérente des champs sur toute sa surface).',
+  screen: 'Écran / caméra linéaire : profil d\'intensité. En mode photon, les impacts s\'accumulent un par un.',
+  spectro: 'Spectromètre : répartition de la puissance par longueur d\'onde.',
+  polarimeter: 'Polarimètre : paramètres de Stokes, ellipse et sphère de Poincaré (= sphère de Bloch du qubit de polarisation).',
+  probe: 'Sonde idéale <b>non destructive</b> (n\'existe pas en vrai : c\'est un outil de simulation). Elle lit l\'état sans le mesurer : polarisation → sphère de Bloch ; ou, avec deux sondes « rail 0 » et « rail 1 » du même nom, le <b>qubit de chemin</b> (avec sa pureté).',
+};
+
+const st = {
+  comps: [], sel: null, view: { x: 200, y: -60, s: 2 }, snap: true, showRays: true,
+  sim: null, det: {}, pst: null, counts: {}, scrHits: {}, scrDots: {}, fired: 0, detected: 0, lost: 0,
+  anim: null, flash: {}, cont: false, undo: [], nextId: 1, presetKey: '',
+};
+let W = 0, H = 0, DPR = 1;
+
+// ---------- utilitaires ----------
+function newComp(type, x, y, angle = 0, p = {}) {
+  const d = DEFS[type];
+  const id = 'c' + (st.nextId++);
+  const pre = (LANG === 'en' ? PREFIX_EN : PREFIX)[type] || type;
+  let k = 1; const used = new Set(st.comps.map(c => c.label));
+  while (used.has(pre + k)) k++;
+  return { id, type, x, y, angle, p: Object.assign({}, JSON.parse(JSON.stringify(d.params)), p), label: pre + k };
+}
+const w2s = (x, y) => [(x - st.view.x) * st.view.s + W / 2, (y - st.view.y) * st.view.s + H / 2];
+const s2w = (X, Y) => [(X - W / 2) / st.view.s + st.view.x, (Y - H / 2) / st.view.s + st.view.y];
+const rgbStr = (c, a = 1) => `rgba(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)},${a})`;
+function beamRGB(l) { const c = lamRGB(l); if (l > 780) return [1, 0.35, 0.45]; if (l < 380) return [0.7, 0.45, 1]; const m = Math.max(...c, 0.01); return c.map(x => Math.min(1, x / m * 0.9 + 0.1)); }
+function fmtP(mw) { if (mw === 0) return '0'; const a = Math.abs(mw); if (a >= 1) return mw.toFixed(3) + ' mW'; if (a >= 1e-3) return (mw * 1e3).toFixed(3) + ' µW'; if (a >= 1e-6) return (mw * 1e6).toFixed(3) + ' nW'; return (mw * 1e9).toFixed(2) + ' pW'; }
+function photonFlux(mw, lam) { return mw * 1e-3 / (6.62607e-34 * 2.99792458e8 / (lam * 1e-9)); }
+function fmtSci(x) { if (x === 0) return '0'; const e = Math.floor(Math.log10(Math.abs(x))); return (x / 10 ** e).toFixed(2) + '·10^' + e; }
+function cplx(a) { const r = Math.abs(a[0]) < 5e-4 ? 0 : a[0], i = Math.abs(a[1]) < 5e-4 ? 0 : a[1]; if (!i) return r.toFixed(3); if (!r) return i.toFixed(3) + 'i'; return '(' + r.toFixed(3) + (i >= 0 ? '+' : '−') + Math.abs(i).toFixed(3) + 'i)'; }
+
+function snapshot() { return JSON.stringify({ comps: st.comps, nextId: st.nextId }); }
+function pushUndo() { st.undo.push(snapshot()); if (st.undo.length > 80) st.undo.shift(); }
+function undo() { const s = st.undo.pop(); if (!s) return; const o = JSON.parse(s); st.comps = o.comps; st.nextId = o.nextId; st.sel = null; changed(true); buildProps(); }
+function save() { try { localStorage.setItem('banc-optique-v1', JSON.stringify({ comps: st.comps, nextId: st.nextId, view: st.view, preset: st.presetKey })); } catch (e) { } }
+
+// ---------- simulation ----------
+let pending = false, geomChanged = false;
+function changed(resetCounts = true) {
+  if (resetCounts) geomChanged = true;
+  if (!pending) { pending = true; requestAnimationFrame(() => { pending = false; recompute(); }); }
+}
+function resetCounts() { st.counts = {}; st.scrHits = {}; st.scrDots = {}; st.fired = 0; st.detected = 0; st.lost = 0; }
+function recompute() {
+  if (geomChanged) { resetCounts(); geomChanged = false; }
+  st.sim = simulate(st.comps);
+  st.det = {};
+  for (const c of st.comps) if (DET_TYPES.includes(c.type)) st.det[c.id] = computeDetector(c, st.sim, c.type === 'screen' ? Math.round(c.p.res) : 0);
+  st.pst = probeStates(st.comps, st.sim);
+  $('warn').style.display = st.sim.truncated ? 'block' : 'none';
+  $('warn').textContent = st.sim.truncated ? L('⚠ Trop de réflexions : calcul tronqué', '⚠ Too many reflections: calculation truncated') : '';
+  save(); draw(); updateCards(); updateQbar();
+}
+
+// ---------- dessin de la table ----------
+function resize() {
+  const r = $('stage').getBoundingClientRect(); DPR = window.devicePixelRatio || 1;
+  W = r.width; H = r.height; cv.width = W * DPR; cv.height = H * DPR; draw();
+}
+function draw() {
+  if (!st.sim) return;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  ctx.fillStyle = '#0a0d13'; ctx.fillRect(0, 0, W, H);
+  drawGrid();
+  if (st.showRays) drawRays();
+  for (const c of st.comps) drawComp(c);
+  drawScreensOverlay();
+  drawLabels();
+  if (st.anim) drawAnim();
+  const s = st.sel && st.comps.find(c => c.id === st.sel);
+  if (s) drawSelection(s);
+  $('hud').textContent = L(`échelle ${st.view.s.toFixed(2)} px/mm · ${st.sim.rayCount} faisceaux · molette = zoom · glisser le fond = déplacer · Suppr, R/E = tourner, Espace = 1 photon`, `scale ${st.view.s.toFixed(2)} px/mm · ${st.sim.rayCount} beams · wheel = zoom · drag background = pan · Del, R/E = rotate, Space = 1 photon`);
+}
+function drawGrid() {
+  const s = st.view.s; let step = 10; while (step * s < 9) step *= 5;
+  const [x0, y0] = s2w(0, 0), [x1, y1] = s2w(W, H);
+  ctx.lineWidth = 1;
+  for (const [stp, col] of [[step, '#121826'], [step * 5, '#1a2233']]) {
+    ctx.strokeStyle = col; ctx.beginPath();
+    for (let x = Math.floor(x0 / stp) * stp; x <= x1; x += stp) { const X = Math.round(w2s(x, 0)[0]) + .5; ctx.moveTo(X, 0); ctx.lineTo(X, H); }
+    for (let y = Math.floor(y0 / stp) * stp; y <= y1; y += stp) { const Y = Math.round(w2s(0, y)[1]) + .5; ctx.moveTo(0, Y); ctx.lineTo(W, Y); }
+    ctx.stroke();
+  }
+  // barre d'échelle
+  const bar = step * 5, bx = W - 20 - bar * s;
+  ctx.strokeStyle = '#8796ad'; ctx.beginPath(); ctx.moveTo(bx, H - 14); ctx.lineTo(W - 20, H - 14); ctx.stroke();
+  ctx.fillStyle = '#8796ad'; ctx.font = '11px system-ui'; ctx.textAlign = 'center'; ctx.fillText(bar + ' mm', (bx + W - 20) / 2, H - 18);
+}
+function drawRays() {
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  for (const sg of st.sim.segs) {
+    if (sg.I < 2e-6) continue;
+    const a = w2s(...sg.a), b = w2s(...sg.b), col = beamRGB(sg.lam);
+    const al = Math.min(1, 0.12 + 0.88 * Math.sqrt(sg.I));
+    ctx.strokeStyle = rgbStr(col, al * 0.95); ctx.lineWidth = sg.photon ? 2 : 1.8;
+    if (sg.photon) ctx.setLineDash([6, 4]); else ctx.setLineDash([]);
+    ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+  // éventails de diffraction
+  for (const f of st.sim.fans) {
+    if (f.I < 1e-6) continue;
+    const col = beamRGB(f.lam), K = 25;
+    for (let i = 0; i < K; i++) {
+      const th = -f.th + 2 * f.th * i / (K - 1);
+      const d = [f.n[0] * Math.cos(th) + f.t[0] * Math.sin(th), f.n[1] * Math.cos(th) + f.t[1] * Math.sin(th)];
+      let L = 2500; for (const s of st.sim.S) { if (s.c.id === f.slit) continue; const h = raySeg(f.pos, d, s.p1, s.p2); if (h && h.t < L) L = h.t; }
+      ctx.strokeStyle = rgbStr(col, 0.22 * Math.sqrt(f.I));
+      ctx.lineWidth = 1; ctx.beginPath(); ctx.moveTo(...w2s(...f.pos)); ctx.lineTo(...w2s(f.pos[0] + d[0] * L, f.pos[1] + d[1] * L)); ctx.stroke();
+    }
+  }
+  ctx.restore();
+}
+function compFrame(c) {
+  const [X, Y] = w2s(c.x, c.y); ctx.save(); ctx.translate(X, Y); ctx.rotate(c.angle * D2R); const s = st.view.s; ctx.scale(s, s); return 1 / s;
+}
+function rectL(x, y, w, h, fill, stroke, lw) { ctx.beginPath(); ctx.rect(x, y, w, h); if (fill) { ctx.fillStyle = fill; ctx.fill(); } if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lw; ctx.stroke(); } }
+function drawComp(c) {
+  const d = DEFS[c.type];
+  if (d.kind === 'glass') {
+    const V = glassVerts(c).map(p => w2s(...p));
+    ctx.beginPath(); V.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.closePath();
+    ctx.fillStyle = 'rgba(110,170,255,0.13)'; ctx.fill(); ctx.strokeStyle = 'rgba(150,200,255,0.75)'; ctx.lineWidth = 1.3; ctx.stroke();
+    return;
+  }
+  const px = compFrame(c), h = compSize(c) / 2, p = c.p;
+  switch (c.type) {
+    case 'laser': case 'photon': case 'collimated': case 'point': {
+      const hh = c.type === 'collimated' ? Math.max(7, p.beamWidth / 2 + 2) : 7;
+      rectL(-34, -hh, 34, 2 * hh, '#1a2030', d.color, 1.5 * px);
+      rectL(-2, -Math.min(hh - 2, 3), 2, 2 * Math.min(hh - 2, 3), d.color);
+      if (c.type === 'photon') { ctx.fillStyle = d.color; ctx.beginPath(); ctx.arc(-17, 0, 3.2, 0, 7); ctx.fill(); }
+      else { const col = beamRGB(p.spectrum === 'mono' ? p.lambda : 550); ctx.fillStyle = p.spectrum === 'mono' ? rgbStr(col) : '#fff'; ctx.beginPath(); ctx.arc(-17, 0, 3, 0, 7); ctx.fill(); }
+      break;
+    }
+    case 'mirror':
+      ctx.strokeStyle = '#3a4252'; ctx.lineWidth = px; for (let y = -h + 3; y <= h; y += 4) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(3, y - 3); ctx.stroke(); }
+      ctx.strokeStyle = '#e8eef8'; ctx.lineWidth = 3 * px; ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, h); ctx.stroke(); break;
+    case 'concave': {
+      const sag = Math.max(-h * 0.35, Math.min(h * 0.35, (h * h) / (4 * (p.f || 1e9)) * 3));
+      ctx.strokeStyle = '#e8eef8'; ctx.lineWidth = 3 * px; ctx.beginPath(); ctx.moveTo(-sag, -h); ctx.quadraticCurveTo(sag, 0, -sag, h); ctx.stroke(); break;
+    }
+    case 'bs': rectL(-1.2, -h, 2.4, 2 * h, 'rgba(120,200,255,0.18)', 'rgba(150,215,255,0.9)', 1.2 * px); break;
+    case 'pbs':
+      ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(h, 0); ctx.lineTo(0, h); ctx.lineTo(-h, 0); ctx.closePath();
+      ctx.fillStyle = 'rgba(160,130,255,0.13)'; ctx.fill(); ctx.strokeStyle = 'rgba(190,170,255,0.8)'; ctx.lineWidth = 1.2 * px; ctx.stroke();
+      ctx.strokeStyle = 'rgba(210,190,255,1)'; ctx.lineWidth = 2 * px; ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, h); ctx.stroke(); break;
+    case 'lens': {
+      const b = Math.max(1.5, Math.min(h * 0.35, (h * h) / Math.abs(p.f || 1e9) * 1.5));
+      ctx.beginPath();
+      if ((p.f || 1) > 0) { ctx.moveTo(0, -h); ctx.quadraticCurveTo(2 * b, 0, 0, h); ctx.quadraticCurveTo(-2 * b, 0, 0, -h); }
+      else { ctx.moveTo(-b - 1, -h); ctx.lineTo(b + 1, -h); ctx.quadraticCurveTo(0, 0, b + 1, h); ctx.lineTo(-b - 1, h); ctx.quadraticCurveTo(0, 0, -b - 1, -h); }
+      ctx.fillStyle = 'rgba(120,180,255,0.22)'; ctx.fill(); ctx.strokeStyle = 'rgba(160,210,255,0.9)'; ctx.lineWidth = 1.2 * px; ctx.stroke(); break;
+    }
+    case 'polarizer': {
+      rectL(-1.5, -h, 3, 2 * h, 'rgba(200,200,210,0.2)', '#c9d1de', 1.2 * px);
+      ctx.strokeStyle = 'rgba(220,225,235,0.5)'; ctx.lineWidth = 0.6 * px; for (let y = -h + 2; y < h; y += 2.5) { ctx.beginPath(); ctx.moveTo(-1.5, y); ctx.lineTo(1.5, y); ctx.stroke(); }
+      break;
+    }
+    case 'hwp': rectL(-1.5, -h, 3, 2 * h, 'rgba(255,170,80,0.3)', '#ffb35c', 1.2 * px); break;
+    case 'qwp': rectL(-1.5, -h, 3, 2 * h, 'rgba(110,240,160,0.25)', '#7cf29a', 1.2 * px); break;
+    case 'retarder': rectL(-1.5, -h, 3, 2 * h, 'rgba(255,230,100,0.25)', '#ffe066', 1.2 * px); break;
+    case 'rotator': rectL(-2.5, -h, 5, 2 * h, 'rgba(140,120,255,0.3)', '#a796ff', 1.2 * px); break;
+    case 'phase': rectL(-2, -h, 4, 2 * h, 'rgba(90,220,255,0.22)', '#5ad8ff', 1.2 * px); break;
+    case 'filter': rectL(-1.5, -h, 3, 2 * h, rgbStr(beamRGB(p.center), 0.45), rgbStr(beamRGB(p.center), 1), 1.2 * px); break;
+    case 'nd': rectL(-1.5, -h, 3, 2 * h, `rgba(120,120,130,${0.8 - p.T / 140})`, '#9aa3b2', 1.2 * px); break;
+    case 'iris': { const a = Math.min(h, p.aperture / 2); rectL(-1.5, -h, 3, h - a, '#2a3242', '#8da0bc', 1.2 * px); rectL(-1.5, a, 3, h - a, '#2a3242', '#8da0bc', 1.2 * px); break; }
+    case 'slit': case 'dslit': {
+      const g = Math.max(0.6, 2.5 * px), gaps = c.type === 'dslit' ? [-Math.max(2.2, p.d / 1000 / 2), Math.max(2.2, p.d / 1000 / 2)] : [0];
+      ctx.fillStyle = '#2a3242'; ctx.strokeStyle = '#8da0bc'; ctx.lineWidth = 1.2 * px;
+      let y = -h; const sorted = gaps.slice().sort((a, b) => a - b);
+      for (const gy of sorted) { rectL(-1.5, y, 3, gy - g / 2 - y, '#2a3242', '#8da0bc', 1.2 * px); y = gy + g / 2; }
+      rectL(-1.5, y, 3, h - y, '#2a3242', '#8da0bc', 1.2 * px); break;
+    }
+    case 'grating': ctx.strokeStyle = '#ffd3f7'; ctx.lineWidth = 2 * px; ctx.setLineDash([2 * px * 1.5, 2 * px]); ctx.beginPath(); ctx.moveTo(0, -h); ctx.lineTo(0, h); ctx.stroke(); ctx.setLineDash([]); rectL(-1, -h, 2, 2 * h, null, 'rgba(255,200,240,0.4)', px); break;
+    case 'absorber': rectL(-2.5, -h, 5, 2 * h, '#05070b', '#5a6476', 1.2 * px); break;
+    case 'spad': case 'power': case 'spectro': case 'polarimeter': {
+      const fl = st.flash[c.id] && performance.now() - st.flash[c.id] < 400;
+      rectL(-3, -h, 6, 2 * h, fl ? 'rgba(124,242,154,0.9)' : '#141a26', d.color, 1.5 * px);
+      ctx.fillStyle = d.color; ctx.beginPath(); ctx.arc(0, 0, Math.min(2, h * 0.4), 0, 7); ctx.fill(); break;
+    }
+    case 'screen': rectL(-1.2, -h, 2.4, 2 * h, '#1b2130', '#e6ecf5', 1.2 * px); break;
+    case 'probe': ctx.setLineDash([3 * px, 2.5 * px]); rectL(-3, -h, 6, 2 * h, 'rgba(215,140,255,0.08)', d.color, 1.3 * px); ctx.setLineDash([]); break;
+  }
+  ctx.restore();
+}
+function drawScreensOverlay() {
+  for (const c of st.comps) {
+    if (c.type !== 'screen') continue;
+    const r = st.det[c.id]; if (!r) continue;
+    const px = compFrame(c), h = compSize(c) / 2, N = r.N;
+    let mx = 0; for (let j = 0; j < N; j++) mx = Math.max(mx, r.prof[j]);
+    if (mx > 0) for (let j = 0; j < N; j++) {
+      const rr = r.profRGB[0][j] / mx, gg = r.profRGB[1][j] / mx, bb = r.profRGB[2][j] / mx;
+      const m = Math.max(rr, gg, bb); if (m < 0.004) continue;
+      const k = Math.pow(r.prof[j] / mx, 0.6) / m;
+      ctx.fillStyle = `rgb(${Math.min(255, rr * k * 255) | 0},${Math.min(255, gg * k * 255) | 0},${Math.min(255, bb * k * 255) | 0})`;
+      ctx.fillRect(-1.2, -h + j * r.dx, 2.4, r.dx * 1.05 + 0.2 * px);
+    }
+    const dots = st.scrDots[c.id];
+    if (dots && dots.length) {
+      ctx.fillStyle = 'rgba(235,215,255,0.85)';
+      for (const dt of dots) ctx.fillRect(1.6 + dt[1] * 5, -h + dt[0] * 2 * h - 0.6 * px, 1.6 * px, 1.2 * px);
+    }
+    ctx.restore();
+  }
+}
+function compValueText(c) {
+  const r = st.det[c.id];
+  if (r) {
+    const parts = [];
+    if (r.power > 0 || !r.prob) parts.push(fmtP(r.power));
+    if (r.prob > 0 || hasPhoton()) { const pr = c.type === 'spad' ? r.prob * c.p.eta / 100 : r.prob; parts.push('P=' + pr.toFixed(3)); }
+    if (st.counts[c.id]) parts.push(st.counts[c.id] + L(' clics', ' clicks'));
+    return parts.join(' · ');
+  }
+  const p = c.p;
+  switch (c.type) {
+    case 'laser': return p.spectrum === 'mono' ? p.lambda + ' nm' : (p.spectrum === 'rgb' ? L('RVB', 'RGB') : L('blanc', 'white'));
+    case 'photon': return p.lambda + ' nm · ' + (p.pol === 'angle' ? p.polAngle + '°' : p.pol);
+    case 'bs': return 'R=' + p.R + '%';
+    case 'lens': case 'concave': return 'f=' + p.f;
+    case 'polarizer': case 'hwp': case 'qwp': return p.theta + '°';
+    case 'retarder': return 'θ=' + p.theta + '° δ=' + p.delta + '°';
+    case 'rotator': return p.theta + '°';
+    case 'phase': return 'φ=' + p.phi + '°';
+    case 'dslit': return 'd=' + p.d + 'µm';
+    case 'slit': return 'a=' + p.a + 'µm';
+    case 'grating': return p.lpm + L(' tr/mm', ' l/mm');
+    case 'filter': return p.center + '±' + p.bw / 2;
+    case 'nd': return 'T=' + p.T + '%';
+    case 'probe': { const ps = st.pst && st.pst.probes[c.id]; if (p.mode !== 'pol') return p.qname + (p.mode === 'rail0' ? '|0⟩' : '|1⟩'); return ps && ps.probQ ? 'P=' + ps.probQ.toFixed(3) : ''; }
+  }
+  return '';
+}
+function drawLabels() {
+  ctx.font = '11px system-ui'; ctx.textAlign = 'center';
+  for (const c of st.comps) {
+    const d = DEFS[c.type];
+    let off = d.kind === 'glass' ? (c.type === 'block' ? Math.max(c.p.w, c.p.h) / 2 : c.p.side * 0.6) : compSize(c) / 2;
+    if (d.kind === 'source') off = c.type === 'collimated' ? c.p.beamWidth / 2 + 8 : 9;
+    const [X, Y] = w2s(c.x, c.y);
+    const oy = Math.max(14, off * st.view.s * Math.max(Math.abs(Math.cos(c.angle * D2R)), 0.25) + 12);
+    const t1 = c.label, t2 = compValueText(c);
+    ctx.fillStyle = c.id === st.sel ? '#a9c6ff' : '#c9d4e6'; ctx.fillText(t1, X, Y + oy);
+    if (t2) { ctx.fillStyle = '#8796ad'; ctx.fillText(t2, X, Y + oy + 12); }
+  }
+}
+function handlePos(c) { const [X, Y] = w2s(c.x, c.y), a = c.angle * D2R, R = Math.max(34, (compSize(c) / 2) * 0 + 34); return [X + Math.cos(a) * R, Y + Math.sin(a) * R]; }
+function drawSelection(c) {
+  const [X, Y] = w2s(c.x, c.y), [hx, hy] = handlePos(c);
+  ctx.strokeStyle = '#7aa8ff'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]);
+  ctx.beginPath(); ctx.arc(X, Y, 26, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+  ctx.beginPath(); ctx.moveTo(X, Y); ctx.lineTo(hx, hy); ctx.stroke();
+  ctx.fillStyle = '#7aa8ff'; ctx.beginPath(); ctx.arc(hx, hy, 5.5, 0, 7); ctx.fill();
+  ctx.fillStyle = '#0a0d13'; ctx.font = 'bold 9px system-ui'; ctx.textAlign = 'center'; ctx.fillText('↻', hx, hy + 3);
+  ctx.fillStyle = '#a9c6ff'; ctx.font = '11px system-ui'; ctx.fillText((+c.angle.toFixed(2)) + '°', hx, hy - 9);
+}
+
+// ---------- hit test & souris ----------
+function pick(X, Y) {
+  const [x, y] = s2w(X, Y), tol = Math.max(2.5, 7 / st.view.s);
+  for (let i = st.comps.length - 1; i >= 0; i--) {
+    const c = st.comps[i], d = DEFS[c.type];
+    if (d.kind === 'glass') { if (pointInPoly([x, y], glassVerts(c))) return c; continue; }
+    const a = c.angle * D2R, n = [Math.cos(a), Math.sin(a)], t = [-Math.sin(a), Math.cos(a)];
+    const lx = (x - c.x) * n[0] + (y - c.y) * n[1], ly = (x - c.x) * t[0] + (y - c.y) * t[1];
+    if (d.kind === 'source') { const hh = c.type === 'collimated' ? Math.max(7, c.p.beamWidth / 2 + 2) : 7; if (lx > -34 - tol && lx < tol && Math.abs(ly) < hh + tol) return c; continue; }
+    const hw = c.type === 'pbs' ? compSize(c) / 2 : 4;
+    if (Math.abs(lx) < hw + tol && Math.abs(ly) < compSize(c) / 2 + tol) return c;
+  }
+  return null;
+}
+function pointInPoly(p, V) { let ins = false; for (let i = 0, j = V.length - 1; i < V.length; j = i++) { if (((V[i][1] > p[1]) !== (V[j][1] > p[1])) && (p[0] < (V[j][0] - V[i][0]) * (p[1] - V[i][1]) / (V[j][1] - V[i][1]) + V[i][0])) ins = !ins; } return ins; }
+const snapV = (x, s = 5) => st.snap ? Math.round(x / s) * s : Math.round(x * 100) / 100;
+let drag = null;
+cv.addEventListener('pointerdown', e => {
+  cv.setPointerCapture(e.pointerId);
+  const r = cv.getBoundingClientRect(), X = e.clientX - r.left, Y = e.clientY - r.top;
+  const sel = st.sel && st.comps.find(c => c.id === st.sel);
+  if (sel) { const [hx, hy] = handlePos(sel); if (Math.hypot(X - hx, Y - hy) < 10) { pushUndo(); drag = { mode: 'rot', c: sel }; return; } }
+  const c = pick(X, Y);
+  if (c) {
+    st.sel = c.id; pushUndo(); const [x, y] = s2w(X, Y); drag = { mode: 'move', c, ox: c.x - x, oy: c.y - y, moved: false }; buildProps(); draw(); highlightCard();
+  } else { drag = { mode: 'pan', X, Y, vx: st.view.x, vy: st.view.y, moved: false }; }
+});
+cv.addEventListener('pointermove', e => {
+  if (!drag) { const r = cv.getBoundingClientRect(); cv.style.cursor = pick(e.clientX - r.left, e.clientY - r.top) ? 'move' : 'default'; return; }
+  const r = cv.getBoundingClientRect(), X = e.clientX - r.left, Y = e.clientY - r.top;
+  if (drag.mode === 'pan') { drag.moved = true; st.view.x = drag.vx - (X - drag.X) / st.view.s; st.view.y = drag.vy - (Y - drag.Y) / st.view.s; draw(); }
+  else if (drag.mode === 'move') { const [x, y] = s2w(X, Y); drag.c.x = snapV(x + drag.ox); drag.c.y = snapV(y + drag.oy); drag.moved = true; changed(); syncPosFields(); }
+  else if (drag.mode === 'rot') {
+    const [cx, cy] = w2s(drag.c.x, drag.c.y); let a = Math.atan2(Y - cy, X - cx) / D2R;
+    a = (st.snap && !e.shiftKey) ? Math.round(a / 5) * 5 : Math.round(a * 10) / 10;
+    drag.c.angle = ((a % 360) + 360) % 360; changed(); syncPosFields();
+  }
+});
+cv.addEventListener('pointerup', () => {
+  if (drag && drag.mode === 'pan' && !drag.moved) { st.sel = null; buildProps(); draw(); highlightCard(); }
+  if (drag && drag.mode === 'move' && !drag.moved) st.undo.pop();
+  drag = null;
+});
+cv.addEventListener('wheel', e => {
+  e.preventDefault(); const r = cv.getBoundingClientRect(), X = e.clientX - r.left, Y = e.clientY - r.top;
+  const [x, y] = s2w(X, Y); st.view.s = Math.min(60, Math.max(0.15, st.view.s * Math.exp(-e.deltaY * 0.0015)));
+  st.view.x = x - (X - W / 2) / st.view.s; st.view.y = y - (Y - H / 2) / st.view.s; draw(); save();
+}, { passive: false });
+cv.addEventListener('dragover', e => e.preventDefault());
+cv.addEventListener('drop', e => { e.preventDefault(); const t = e.dataTransfer.getData('text/plain'); if (!DEFS[t]) return; const r = cv.getBoundingClientRect(); const [x, y] = s2w(e.clientX - r.left, e.clientY - r.top); addComp(t, snapV(x), snapV(y)); });
+
+function addComp(type, x, y) {
+  pushUndo();
+  const ang = DEFS[type].kind === 'source' || DEFS[type].kind === 'det' || DEFS[type].kind === 'glass' ? 0 : 0;
+  const c = newComp(type, x, y, ang); st.comps.push(c); st.sel = c.id; changed(); buildProps();
+}
+function delSel() { if (!st.sel) return; pushUndo(); st.comps = st.comps.filter(c => c.id !== st.sel); st.sel = null; changed(); buildProps(); }
+function dupSel() { const c = st.comps.find(c => c.id === st.sel); if (!c) return; pushUndo(); const n = newComp(c.type, c.x + 20, c.y + 20, c.angle, JSON.parse(JSON.stringify(c.p))); st.comps.push(n); st.sel = n.id; changed(); buildProps(); }
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea,select')) return;
+  const c = st.comps.find(c => c.id === st.sel);
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') { e.preventDefault(); dupSel(); return; }
+  if (e.key === ' ') { e.preventDefault(); fire(1, true); return; }
+  if (e.key === 'Escape') { st.sel = null; buildProps(); draw(); return; }
+  if (!c) return;
+  if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); delSel(); return; }
+  const step = e.shiftKey ? 1 : 15;
+  if (e.key === 'r' || e.key === 'R') { pushUndo(); c.angle = ((c.angle + step) % 360 + 360) % 360; changed(); buildProps(); }
+  if (e.key === 'e' || e.key === 'E') { pushUndo(); c.angle = ((c.angle - step) % 360 + 360) % 360; changed(); buildProps(); }
+  const mv = e.shiftKey ? 10 : 1, dir = { ArrowLeft: [-mv, 0], ArrowRight: [mv, 0], ArrowUp: [0, -mv], ArrowDown: [0, mv] }[e.key];
+  if (dir) { e.preventDefault(); c.x += dir[0]; c.y += dir[1]; changed(); syncPosFields(); }
+});
+
+// ---------- palette ----------
+function iconFor(type) {
+  const k = document.createElement('canvas'); k.width = 44; k.height = 28; k.style.width = '22px'; k.style.height = '14px';
+  const g = k.getContext('2d'); const d = DEFS[type]; g.scale(2, 2);
+  const col = d.color || ({ mirror: '#e8eef8', concave: '#e8eef8', bs: '#96d7ff', pbs: '#bea9ff', lens: '#a0d2ff', block: '#96c8ff', prism: '#96c8ff', polarizer: '#c9d1de', hwp: '#ffb35c', qwp: '#7cf29a', retarder: '#ffe066', rotator: '#a796ff', phase: '#5ad8ff', filter: '#7cf29a', nd: '#9aa3b2', iris: '#8da0bc', slit: '#8da0bc', dslit: '#8da0bc', grating: '#ffd3f7', absorber: '#5a6476' })[type] || '#fff';
+  g.strokeStyle = col; g.fillStyle = col; g.lineWidth = 1.4;
+  if (d.kind === 'source') { g.strokeRect(1, 3, 13, 8); g.beginPath(); g.moveTo(14, 7); g.lineTo(21, 7); g.stroke(); }
+  else if (type === 'prism') { g.beginPath(); g.moveTo(11, 1); g.lineTo(19, 13); g.lineTo(3, 13); g.closePath(); g.stroke(); }
+  else if (type === 'block') g.strokeRect(6, 1, 10, 12);
+  else if (type === 'lens') { g.beginPath(); g.ellipse(11, 7, 3, 6.5, 0, 0, 7); g.stroke(); }
+  else if (type === 'pbs') { g.strokeRect(5, 1, 12, 12); g.beginPath(); g.moveTo(5, 13); g.lineTo(17, 1); g.stroke(); }
+  else if (d.kind === 'det' || d.kind === 'probe') { if (d.kind === 'probe') g.setLineDash([2, 2]); g.strokeRect(8, 1, 6, 12); g.beginPath(); g.arc(11, 7, 1.6, 0, 7); g.fill(); }
+  else if (type === 'dslit' || type === 'slit') { g.beginPath(); g.moveTo(11, 0); g.lineTo(11, type === 'dslit' ? 4 : 5.5); g.moveTo(11, type === 'dslit' ? 6 : 8.5); g.lineTo(11, type === 'dslit' ? 8 : 14); if (type === 'dslit') { g.moveTo(11, 10); g.lineTo(11, 14); } g.stroke(); }
+  else { g.lineWidth = type === 'mirror' ? 2.2 : 3; g.beginPath(); g.moveTo(11, 1); g.lineTo(11, 13); g.stroke(); }
+  return k;
+}
+function buildPalette() {
+  const pal = $('palette'); pal.innerHTML = ''; let cat = '';
+  for (const [type, d] of Object.entries(DEFS)) {
+    if (d.cat !== cat) { cat = d.cat; const h = document.createElement('h3'); h.textContent = tr(cat); pal.appendChild(h); }
+    const it = document.createElement('div'); it.className = 'pitem'; it.draggable = true; it.title = L('Clique ou glisse sur la table', 'Click or drag onto the table');
+    it.appendChild(iconFor(type)); const s = document.createElement('span'); s.textContent = tr(d.name); it.appendChild(s);
+    it.addEventListener('click', () => addComp(type, snapV(st.view.x), snapV(st.view.y)));
+    it.addEventListener('dragstart', e => e.dataTransfer.setData('text/plain', type));
+    pal.appendChild(it);
+  }
+}
+
+// ---------- panneau de propriétés ----------
+function syncPosFields() { const c = st.comps.find(c => c.id === st.sel); if (!c) return; for (const k of ['x', 'y', 'angle']) { const el = $('f_' + k); if (el && document.activeElement !== el) el.value = +(+c[k]).toFixed(3); } }
+function buildProps() {
+  const box = $('props'); box.innerHTML = '';
+  const c = st.comps.find(c => c.id === st.sel);
+  if (!c) { box.innerHTML = generalHelp(); return; }
+  const d = DEFS[c.type];
+  const h = document.createElement('div');
+  h.innerHTML = `<h2>${tr(d.name)}</h2>
+  <div class="row"><label>${L('Nom', 'Name')}</label><input type="text" id="f_label" value="${c.label}"></div>
+  <div class="row"><label>${L('Position x / y (mm) · angle (°)', 'Position x / y (mm) · angle (°)')}</label><div class="grid3"><input type="number" id="f_x" step="0.5"><input type="number" id="f_y" step="0.5"><input type="number" id="f_angle" step="0.01"></div></div>`;
+  box.appendChild(h); syncPosFields();
+  $('f_label').oninput = e => { c.label = e.target.value; draw(); updateCards(true); save(); };
+  for (const k of ['x', 'y', 'angle']) $('f_' + k).onchange = e => { pushUndo(); c[k] = +e.target.value; changed(); };
+  const specs = d.spec.map(s => Array.isArray(s) ? s : [s, P[s]]);
+  const ctl = document.createElement('div'); box.appendChild(ctl);
+  const render = () => {
+    ctl.innerHTML = '';
+    for (const [key, sp] of specs) {
+      if (sp.showIf && !sp.showIf(c.p)) continue;
+      const row = document.createElement('div'); row.className = 'row';
+      const val = c.p[key];
+      const lab = document.createElement('label'); lab.innerHTML = `<span>${tr(sp.label)}</span><b>${sp.type === 'range' ? (+val).toFixed(sp.step < 1 ? 1 : 0) + ' ' + (sp.unit || '') : ''}</b>`; row.appendChild(lab);
+      let inp;
+      if (sp.type === 'select') { inp = document.createElement('select'); for (const [v, t] of sp.options) { const o = document.createElement('option'); o.value = v; o.textContent = tr(t); if (v === val) o.selected = true; inp.appendChild(o); } }
+      else if (sp.type === 'check') { inp = document.createElement('input'); inp.type = 'checkbox'; inp.checked = !!val; lab.prepend(inp); lab.style.justifyContent = 'flex-start'; lab.style.gap = '6px'; }
+      else { inp = document.createElement('input'); inp.type = sp.type === 'text' ? 'text' : sp.type; if (sp.min !== undefined) { inp.min = sp.min; inp.max = sp.max; inp.step = sp.step; } inp.value = val; }
+      const apply = () => {
+        let nv = sp.type === 'check' ? inp.checked : (sp.type === 'select' || sp.type === 'text') ? inp.value : +inp.value;
+                c.p[key] = nv; if (sp.type === 'range') lab.querySelector('b').textContent = (+nv).toFixed(sp.step < 1 ? 1 : 0) + ' ' + (sp.unit || '');
+        changed(); if (sp.type === 'select' || sp.type === 'check') render();
+      };
+      if (sp.type === 'range') { inp.addEventListener('pointerdown', pushUndo, { once: false }); inp.oninput = apply; if (sp.unit === '°') { const n = document.createElement('input'); n.type = 'number'; n.step = 'any'; n.value = val; n.style.marginTop = '3px'; n.onchange = () => { pushUndo(); inp.value = n.value; c.p[key] = +n.value; lab.querySelector('b').textContent = (+n.value).toFixed(1) + ' °'; changed(); }; inp.addEventListener('input', () => n.value = inp.value); if (sp.type !== 'check') row.appendChild(inp); row.appendChild(n); ctl.appendChild(row); continue; } }
+      else if (sp.type === 'text') inp.oninput = apply;
+      else inp.onchange = () => { pushUndo(); apply(); };
+      if (sp.type !== 'check') row.appendChild(inp);
+      ctl.appendChild(row);
+    }
+    if (c.type === 'block' || c.type === 'prism') {
+      const n1 = matIndex(c.p, 486.1), n2 = matIndex(c.p, 587.6), n3 = matIndex(c.p, 656.3);
+      const dv = document.createElement('div'); dv.className = 'desc';
+      dv.innerHTML = `n(587 nm) = <b>${n2.toFixed(4)}</b> · ${L("nombre d'Abbe", 'Abbe number')} ≈ ${((n2 - 1) / Math.max(1e-6, n1 - n3)).toFixed(1)}<br>${L('Angle de Brewster', 'Brewster angle')} ≈ ${(Math.atan(n2) / D2R).toFixed(2)}° · ${L('angle critique', 'critical angle')} ≈ ${(Math.asin(1 / n2) / D2R).toFixed(2)}°`;
+      ctl.appendChild(dv);
+    }
+  };
+  render();
+  const b = document.createElement('div'); b.className = 'btns';
+  b.innerHTML = `<button id="pRotL">↺ −90°</button><button id="pRotR">↻ +90°</button><button id="pDup">${L('Dupliquer', 'Duplicate')}</button><button id="pDel">${L('Supprimer', 'Delete')}</button>`;
+  box.appendChild(b);
+  $('pRotL').onclick = () => { pushUndo(); c.angle = (c.angle + 270) % 360; changed(); syncPosFields(); };
+  $('pRotR').onclick = () => { pushUndo(); c.angle = (c.angle + 90) % 360; changed(); syncPosFields(); };
+  $('pDup').onclick = dupSel; $('pDel').onclick = delSel;
+  const ds = document.createElement('div'); ds.className = 'desc'; ds.innerHTML = (LANG === 'en' ? DESC_EN : DESC)[c.type] || ''; box.appendChild(ds);
+}
+function generalHelp() {
+  const pr = PRESETS[st.presetKey];
+  if (LANG === 'en') { const pe = PRESETS_EN[st.presetKey]; return `<h2>${pe ? pe[0] : 'Optical table'}</h2>
+  ${pe ? `<div class="desc">${pe[1]}</div>` : ''}
+  <div class="desc"><b>Build:</b> click or drag an object from the palette. Drag it to move it; the blue ↻ handle rotates it (Shift = free rotation). Click an object to set its parameters here.<br><br>
+  <b>Shortcuts:</b> <kbd>Del</kbd> delete · <kbd>R</kbd>/<kbd>E</kbd> rotate ±15° (Shift: ±1°) · arrows = nudge · <kbd>Ctrl+D</kbd> duplicate · <kbd>Ctrl+Z</kbd> undo · <kbd>Space</kbd> emit a photon.</div>
+  <div class="desc"><b>Qubits:</b> with a <b>single-photon source</b>, H = |0⟩ and V = |1⟩. Wave plates are logic gates (λ/2 at 22.5° = Hadamard); a PBS + two SPADs form a measurement. A 50/50 beam splitter creates a <b>path qubit</b>; a Mach-Zehnder is a full gate. Probes display the Bloch sphere.</div>`; }
+  return `<h2>${pr ? pr.name : 'Table optique'}</h2>
+  ${pr ? `<div class="desc">${pr.desc}</div>` : ''}
+  <div class="desc"><b>Construire :</b> clique ou glisse un objet depuis la palette. Glisse-le pour le déplacer ; la poignée bleue ↻ le fait tourner (Maj = rotation libre). Clique sur un objet pour régler ses paramètres ici.<br><br>
+  <b>Raccourcis :</b> <kbd>Suppr</kbd> supprimer · <kbd>R</kbd>/<kbd>E</kbd> tourner de ±15° (Maj : ±1°) · flèches = décaler · <kbd>Ctrl+D</kbd> dupliquer · <kbd>Ctrl+Z</kbd> annuler · <kbd>Espace</kbd> émettre un photon.</div>
+  <div class="desc"><b>Qubits :</b> avec une <b>source de photons uniques</b>, H = |0⟩ et V = |1⟩. Les lames sont des portes logiques (λ/2 à 22,5° = Hadamard), le PBS + deux SPAD forment une mesure. Une séparatrice 50/50 crée un <b>qubit de chemin</b> ; un Mach-Zehnder est une porte complète. Les sondes affichent la sphère de Bloch.</div>`;
+}
+
+// ---------- capteurs (cartes) ----------
+let cardSig = '';
+function cardList() {
+  const L = [];
+  for (const c of st.comps) if (DET_TYPES.includes(c.type) || (c.type === 'probe' && c.p.mode === 'pol')) L.push({ key: c.id, c });
+  if (st.pst) for (const name of Object.keys(st.pst.qubits)) L.push({ key: 'Q:' + name, q: name });
+  return L;
+}
+function updateCards(force) {
+  const L = cardList(), sig = L.map(x => x.key + (x.c ? x.c.label + x.c.type : '')).join('|');
+  const box = $('cards');
+  if (sig !== cardSig || force) {
+    cardSig = sig; box.innerHTML = '';
+    if (!L.length) box.innerHTML = '<div class="empty">' + L('Ajoute des capteurs (palette « Capteurs ») pour voir les mesures ici : photodiode, SPAD, écran/caméra, spectromètre, polarimètre, sonde d\'état…', 'Add sensors ("Sensors" palette) to see measurements here: photodiode, SPAD, screen/camera, spectrometer, polarimeter, state probe…') + '</div>';
+    for (const it of L) {
+      const el = document.createElement('div'); el.className = 'card' + ((it.c && (it.c.type === 'screen' || it.c.type === 'spectro')) ? ' wide' : ''); el.id = 'card_' + it.key;
+      el.innerHTML = `<div class="t"><b></b><span></span></div><div class="val"></div><canvas></canvas>`;
+      if (it.c) el.onclick = () => { st.sel = it.c.id; buildProps(); draw(); highlightCard(); };
+      box.appendChild(el);
+    }
+  }
+  for (const it of L) {
+    const el = document.getElementById('card_' + it.key); if (!el) continue;
+    const kv = el.querySelector('canvas'); const r = kv.getBoundingClientRect();
+    if (kv.width !== Math.round(r.width * DPR) || kv.height !== Math.round(r.height * DPR)) { kv.width = Math.max(10, Math.round(r.width * DPR)); kv.height = Math.max(10, Math.round(r.height * DPR)); }
+    const g = kv.getContext('2d'); g.setTransform(DPR, 0, 0, DPR, 0, 0); g.clearRect(0, 0, r.width, r.height);
+    if (it.q) fillQubitCard(el, it.q, g, r.width, r.height); else fillCard(el, it.c, g, r.width, r.height);
+  }
+  highlightCard();
+}
+function highlightCard() { document.querySelectorAll('.card').forEach(e => e.classList.toggle('sel', e.id === 'card_' + st.sel)); }
+function hasPhoton() { return st.comps.some(c => c.type === 'photon'); }
+function fillCard(el, c, g, w, h) {
+  const d = DEFS[c.type];
+  el.querySelector('.t b').textContent = c.label; el.querySelector('.t span').textContent = tr(d.name);
+  const val = el.querySelector('.val');
+  if (c.type === 'probe') return fillProbe(el, c, g, w, h);
+  const r = st.det[c.id]; if (!r) return;
+  const q = hasPhoton();
+  const mainLam = Object.keys(r.spec).length === 1 ? +Object.keys(r.spec)[0] : null;
+  let txt = '';
+  if (r.power > 0 || !q) txt += `${L('Puissance', 'Power')} : <b>${fmtP(r.power)}</b>` + (mainLam ? ` · ${fmtSci(photonFlux(r.power, mainLam))} photons/s` : '') + '<br>';
+  if (q) {
+    const eta = c.type === 'spad' ? c.p.eta / 100 : 1, pc = r.prob * eta;
+    const n = st.counts[c.id] || 0;
+    txt += `${L('P(détection)', 'P(detection)')} = <b>${pc.toFixed(4)}</b>` + (st.fired ? ` · ${L('mesuré', 'measured')} : <b>${n}</b>/${st.fired} = ${(n / st.fired).toFixed(4)}` : '');
+  }
+  if (c.type === 'polarimeter') {
+    const S = r.power > 0 ? r.stokes : r.stokesQ, S0 = S[0] || 1, dop = Math.hypot(S[1], S[2], S[3]) / S0;
+    txt += `<br>S₁=${(S[1] / S0).toFixed(3)} S₂=${(S[2] / S0).toFixed(3)} S₃=${(S[3] / S0).toFixed(3)} · DOP ${(dop * 100).toFixed(1)} %`;
+    val.innerHTML = txt;
+    if (S[0] > 1e-12) { drawEllipse(g, h * 0.5, h / 2, h * 0.42, S); drawSphere(g, w - h * 0.5 - 4, h / 2, h * 0.4, [S[2] / S0, S[3] / S0, S[1] / S0], ['D', 'R', 'H'], ['A', 'L', 'V']); }
+    return;
+  }
+  val.innerHTML = txt;
+  if (c.type === 'screen') return plotProfile(g, w, h, r, c);
+  if (c.type === 'spectro') return plotSpectrum(g, w, h, r);
+  // barre : probabilité théorique vs fréquence mesurée
+  if (q) {
+    const eta = c.type === 'spad' ? c.p.eta / 100 : 1, pc = r.prob * eta, n = st.counts[c.id] || 0, f = st.fired ? n / st.fired : 0;
+    g.fillStyle = '#1b2333'; g.fillRect(10, h * 0.25, w - 20, 14); g.fillStyle = '#5b3d86'; g.fillRect(10, h * 0.25, (w - 20) * Math.min(1, pc), 14);
+    g.fillStyle = '#7cf29a'; g.fillRect(10, h * 0.25 + 18, (w - 20) * Math.min(1, f), 8);
+    g.fillStyle = '#8796ad'; g.font = '10.5px system-ui'; g.fillText(L('violet = |ψ|² prédit · vert = mesuré', 'purple = predicted |ψ|² · green = measured'), 10, h * 0.25 + 42);
+  } else {
+    g.fillStyle = '#1b2333'; g.fillRect(10, h / 2 - 8, w - 20, 16);
+    const tot = st.comps.filter(x => DEFS[x.type].kind === 'source' && !DEFS[x.type].photon).reduce((a, x) => a + (+x.p.power || 0), 0) || 1;
+    g.fillStyle = '#59c3ff'; g.fillRect(10, h / 2 - 8, (w - 20) * Math.min(1, r.power / tot), 16);
+    g.fillStyle = '#8796ad'; g.font = '10.5px system-ui'; g.fillText(`${(100 * r.power / tot).toFixed(2)} % ${L('de la puissance émise', 'of emitted power')}`, 10, h / 2 + 24);
+  }
+}
+function plotProfile(g, w, h, r, c) {
+  const N = r.N; let mx = 0; for (let j = 0; j < N; j++) mx = Math.max(mx, r.prof[j]);
+  const probs = Object.values(r.probProf); let pp = null;
+  if (probs.length) { pp = new Float64Array(N); for (const a of probs) for (let j = 0; j < N; j++) pp[j] += a[j]; }
+  let mq = 0; if (pp) for (let j = 0; j < N; j++) mq = Math.max(mq, pp[j]);
+  const top = 6, bot = h - 16, H2 = bot - top;
+  // bande "image caméra"
+  for (let j = 0; j < N; j++) {
+    const x = 4 + (w - 8) * j / N, ww = Math.max(1, (w - 8) / N + 0.5);
+    if (mx > 0) { const k = Math.pow(r.prof[j] / mx, 0.6); const cR = r.profRGB[0][j], cG = r.profRGB[1][j], cB = r.profRGB[2][j], m = Math.max(cR, cG, cB) || 1; g.fillStyle = `rgb(${255 * k * cR / m | 0},${255 * k * cG / m | 0},${255 * k * cB / m | 0})`; g.fillRect(x, bot + 3, ww, 10); }
+  }
+  g.strokeStyle = '#243047'; g.beginPath(); g.moveTo(4, bot); g.lineTo(w - 4, bot); g.stroke();
+  if (mx > 0) { g.strokeStyle = '#9fd0ff'; g.lineWidth = 1.2; g.beginPath(); for (let j = 0; j < N; j++) { const x = 4 + (w - 8) * (j + 0.5) / N, y = bot - H2 * r.prof[j] / mx; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+  if (pp && mq > 0) { g.strokeStyle = '#c38bff'; g.lineWidth = 1.2; g.beginPath(); for (let j = 0; j < N; j++) { const x = 4 + (w - 8) * (j + 0.5) / N, y = bot - H2 * pp[j] / mq; j ? g.lineTo(x, y) : g.moveTo(x, y); } g.stroke(); }
+  const hs = st.scrHits[c.id];
+  if (hs) { const B = 120, bins = new Float64Array(B); for (let j = 0; j < hs.length; j++) bins[Math.floor(j * B / hs.length)] += hs[j]; const m = Math.max(...bins); if (m > 0) { g.fillStyle = 'rgba(124,242,154,0.55)'; for (let b = 0; b < B; b++) { const bh = H2 * bins[b] / m; g.fillRect(4 + (w - 8) * b / B, bot - bh, (w - 8) / B - 0.5, bh); } } }
+  g.fillStyle = '#8796ad'; g.font = '10px system-ui'; g.fillText(`${(-r.L / 2).toFixed(1)} mm`, 6, top + 8); g.textAlign = 'right'; g.fillText(`+${(r.L / 2).toFixed(1)} mm`, w - 6, top + 8); g.textAlign = 'left';
+}
+function plotSpectrum(g, w, h, r) {
+  const all = {}; for (const [l, p] of Object.entries(r.spec)) all[l] = (all[l] || 0) + p; for (const [l, p] of Object.entries(r.specQ)) all[l] = (all[l] || 0) + p;
+  const lo = 380, hi = 1000, bot = h - 16, mx = Math.max(1e-30, ...Object.values(all));
+  for (let l = lo; l < hi; l += 2) { g.fillStyle = rgbStr(lamRGB(l), 0.25); g.fillRect(4 + (w - 8) * (l - lo) / (hi - lo), bot + 3, (w - 8) * 2 / (hi - lo) + 0.5, 6); }
+  for (const [l, p] of Object.entries(all)) { const x = 4 + (w - 8) * (l - lo) / (hi - lo), bh = (bot - 8) * p / mx; g.fillStyle = rgbStr(beamRGB(+l)); g.fillRect(x - 2, bot - bh, 4, bh); }
+  g.fillStyle = '#8796ad'; g.font = '10px system-ui'; for (const l of [400, 500, 600, 700, 800, 900]) g.fillText(l, 4 + (w - 8) * (l - lo) / (hi - lo) - 8, h - 1);
+}
+function fillProbe(el, c, g, w, h) {
+  const ps = st.pst && st.pst.probes[c.id], val = el.querySelector('.val');
+  if (!ps || ps.stokes[0] < 1e-14) { val.innerHTML = L('Aucune lumière ne traverse la sonde.', 'No light goes through the probe.'); drawSphere(g, w / 2, h / 2, h * 0.4, null); return; }
+  const S = ps.stokes, S0 = S[0], b = [S[2] / S0, S[3] / S0, S[1] / S0], pur = Math.hypot(...b);
+  let txt = '';
+  if (ps.probQ > 0) txt += `${L('P(photon ici)', 'P(photon here)')} = <b>${ps.probQ.toFixed(4)}</b><br>`;
+  else txt += `${L('Puissance', 'Power')} : <b>${fmtP(ps.powC)}</b><br>`;
+  const gs = [...ps.groups.values()];
+  if (gs.length === 1) {
+    const E = gs[0].E, n = Math.sqrt(ca2(E[0]) + ca2(E[1])); let a = csc(E[0], 1 / n), bb = csc(E[1], 1 / n);
+    // retire la phase globale pour que α soit réel ≥ 0
+    const ph = ca2(a) > 1e-9 ? Math.atan2(a[1], a[0]) : Math.atan2(bb[1], bb[0]); const rr = cexp(-ph); a = cmul(a, rr); bb = cmul(bb, rr);
+    txt += `|ψ⟩ = ${cplx(a)}|H⟩ + ${cplx(bb)}|V⟩`;
+  } else txt += `${L('État mixte · pureté', 'Mixed state · purity')} |r| = ${pur.toFixed(3)}`;
+  val.innerHTML = txt;
+  drawSphere(g, w / 2, h / 2, h * 0.42, b, ['D', 'R', 'H=|0⟩'], ['A', 'L', 'V=|1⟩']);
+}
+function fillQubitCard(el, name, g, w, h) {
+  const q = st.pst.qubits[name];
+  el.querySelector('.t b').textContent = L('Qubit de chemin ', 'Path qubit ') + name; el.querySelector('.t span').textContent = L('sondes rail 0 / rail 1', 'rail 0 / rail 1 probes');
+  const val = el.querySelector('.val');
+  if (!q.ok) { val.innerHTML = L('Place deux sondes « ' + name + ' » : une en mode rail |0⟩, une en mode rail |1⟩.', 'Place two "' + name + '" probes: one in rail |0⟩ mode, one in rail |1⟩ mode.'); drawSphere(g, w / 2, h / 2, h * 0.42, null); return; }
+  if (q.T < 1e-14) { val.innerHTML = L('Aucun photon dans les deux rails.', 'No photon in either rail.'); drawSphere(g, w / 2, h / 2, h * 0.42, null); return; }
+  const pur = Math.hypot(q.x, q.y, q.z);
+  val.innerHTML = `P(|0⟩)=<b>${q.p0.toFixed(3)}</b> · P(|1⟩)=<b>${q.p1.toFixed(3)}</b><br>Bloch (${q.x.toFixed(2)}, ${q.y.toFixed(2)}, ${q.z.toFixed(2)}) · ${L('cohérence', 'coherence')} |r| = <b>${pur.toFixed(3)}</b>`;
+  drawSphere(g, w / 2, h / 2, h * 0.42, [q.x, q.y, q.z], ['+', '+i', '|0⟩'], ['−', '−i', '|1⟩']);
+}
+function drawSphere(g, cx, cy, R, vec, lp = ['x', 'y', 'z'], ln = ['', '', '']) {
+  const az = -0.55, el = 0.32;
+  const pr = (x, y, z) => { const x1 = x * Math.cos(az) - y * Math.sin(az), y1 = x * Math.sin(az) + y * Math.cos(az); return [cx + R * y1, cy - R * (z * Math.cos(el) - x1 * Math.sin(el)), x1]; };
+  g.strokeStyle = '#3a4660'; g.lineWidth = 1; g.beginPath(); g.arc(cx, cy, R, 0, 7); g.stroke();
+  for (const plane of [0, 1]) {
+    g.beginPath(); for (let i = 0; i <= 64; i++) { const t = i / 64 * 2 * Math.PI; const p = plane ? pr(Math.cos(t), 0, Math.sin(t)) : pr(Math.cos(t), Math.sin(t), 0); i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); }
+    g.strokeStyle = plane ? '#232c3e' : '#2e3a52'; g.stroke();
+  }
+  g.font = '10px system-ui'; g.textAlign = 'center';
+  const axes = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  axes.forEach((a, i) => {
+    const p = pr(...a), m = pr(-a[0], -a[1], -a[2]);
+    g.strokeStyle = '#2f3b55'; g.beginPath(); g.moveTo(m[0], m[1]); g.lineTo(p[0], p[1]); g.stroke();
+    g.fillStyle = '#8796ad'; const pl = pr(a[0] * 1.2, a[1] * 1.2, a[2] * 1.18), ml = pr(-a[0] * 1.2, -a[1] * 1.2, -a[2] * 1.18);
+    g.fillText(lp[i], pl[0], pl[1] + 3); if (ln[i]) g.fillText(ln[i], ml[0], ml[1] + 3);
+  });
+  g.textAlign = 'left';
+  if (!vec) return;
+  const p = pr(...vec);
+  g.strokeStyle = '#c38bff'; g.lineWidth = 2.2; g.beginPath(); g.moveTo(cx, cy); g.lineTo(p[0], p[1]); g.stroke();
+  g.fillStyle = '#e2c6ff'; g.beginPath(); g.arc(p[0], p[1], 3.5, 0, 7); g.fill(); g.lineWidth = 1;
+}
+function drawEllipse(g, cx, cy, R, S) {
+  const S0 = S[0], Ip = Math.hypot(S[1], S[2], S[3]); if (Ip < 1e-12) { g.fillStyle = '#8796ad'; g.font = '10px system-ui'; g.fillText(L('non polarisée', 'unpolarized'), cx - 30, cy); return; }
+  const psi = 0.5 * Math.atan2(S[2], S[1]), chi = 0.5 * Math.asin(Math.max(-1, Math.min(1, S[3] / Ip)));
+  const a = R * Math.cos(chi), b = R * Math.abs(Math.sin(chi));
+  g.strokeStyle = '#2f3b55'; g.beginPath(); g.moveTo(cx - R, cy); g.lineTo(cx + R, cy); g.moveTo(cx, cy - R); g.lineTo(cx, cy + R); g.stroke();
+  g.strokeStyle = '#ffe066'; g.lineWidth = 2; g.beginPath(); g.ellipse(cx, cy, Math.max(a, 0.5), Math.max(b, 0.5), -psi, 0, 2 * Math.PI); g.stroke(); g.lineWidth = 1;
+  g.fillStyle = '#8796ad'; g.font = '10px system-ui'; g.fillText('H', cx + R - 6, cy - 3); g.fillText('V', cx + 3, cy - R + 8);
+  if (Math.abs(S[3] / Ip) > 0.02) g.fillText(S[3] > 0 ? '↺ R' : '↻ L', cx - R, cy + R);
+}
+
+// ---------- mode photon unique ----------
+function photonSources() { return st.comps.filter(c => c.type === 'photon'); }
+function sampleOutcome(src) {
+  const outs = []; let tot = 0;
+  for (const c of st.comps) {
+    if (!DET_TYPES.includes(c.type)) continue;
+    const r = st.det[c.id]; if (!r) continue;
+    let p = r.probBySrc[src.id] || 0; if (c.type === 'spad') p *= c.p.eta / 100;
+    if (p > 0) { outs.push([c, p]); tot += p; }
+  }
+  const sc = tot > 1 ? 1 / tot : 1;
+  let u = Math.random();
+  for (const [c, p] of outs) { u -= p * sc; if (u < 0) return c; }
+  return null;
+}
+function registerHit(c, src) {
+  st.counts[c.id] = (st.counts[c.id] || 0) + 1; st.detected++;
+  if (c.type === 'screen') {
+    const r = st.det[c.id], pp = r.probProf[src.id]; if (!pp) return;
+    let tot = 0; for (let j = 0; j < pp.length; j++) tot += pp[j];
+    let u = Math.random() * tot, j = 0; for (; j < pp.length - 1; j++) { u -= pp[j]; if (u < 0) break; }
+    const hs = st.scrHits[c.id] || (st.scrHits[c.id] = new Float64Array(pp.length)); hs[j]++;
+    const dots = st.scrDots[c.id] || (st.scrDots[c.id] = []); dots.push([(j + Math.random()) / pp.length, Math.random()]); if (dots.length > 6000) dots.shift();
+  }
+}
+function fire(n, animate) {
+  const srcs = photonSources(); if (!srcs.length || !st.sim) { flashMsg(L('Ajoute une « Source de photons uniques » pour le mode quantique.', 'Add a "Single-photon source" for quantum mode.')); return; }
+  if (animate && n === 1) {
+    if (st.anim) return;
+    const src = srcs[Math.floor(Math.random() * srcs.length)];
+    const segs = st.sim.segs.filter(s => s.src === src.id), fans = st.sim.fans.filter(f => f.src === src.id);
+    let maxL = 0; for (const s of segs) { const L = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]); maxL = Math.max(maxL, s.s0 + Math.min(L, 900)); }
+    st.anim = { t0: performance.now(), src, segs, fans, speed: Math.max(350, maxL / 1.6), maxL, out: sampleOutcome(src) };
+    requestAnimationFrame(animLoop); return;
+  }
+  for (let i = 0; i < n; i++) {
+    const src = srcs[Math.floor(Math.random() * srcs.length)];
+    st.fired++;
+    for (const c of st.comps) if (c.type === 'spad' && c.p.dark > 0 && Math.random() < c.p.dark / 100) st.counts[c.id] = (st.counts[c.id] || 0) + 1;
+    const out = sampleOutcome(src);
+    if (out) registerHit(out, src); else st.lost++;
+  }
+  draw(); updateCards(); updateQbar();
+}
+function animLoop() {
+  const a = st.anim; if (!a) return;
+  const t = (performance.now() - a.t0) / 1000, dist = t * a.speed;
+  if (dist > a.maxL + 30) {
+    st.fired++;
+    if (a.out) { registerHit(a.out, a.src); st.flash[a.out.id] = performance.now(); } else st.lost++;
+    st.anim = null; draw(); updateCards(); updateQbar();
+    const t1 = performance.now(); const fl = () => { draw(); if (performance.now() - t1 < 450) requestAnimationFrame(fl); }; requestAnimationFrame(fl);
+    return;
+  }
+  draw(); requestAnimationFrame(animLoop);
+}
+function drawAnim() {
+  const a = st.anim, dist = (performance.now() - a.t0) / 1000 * a.speed;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter';
+  for (const s of a.segs) {
+    const L = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]); if (dist < s.s0 || dist > s.s0 + L) continue;
+    const f = (dist - s.s0) / L, p = w2s(s.a[0] + (s.b[0] - s.a[0]) * f, s.a[1] + (s.b[1] - s.a[1]) * f);
+    const al = Math.min(1, Math.sqrt(s.I) * 1.1);
+    const gr = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], 14); gr.addColorStop(0, `rgba(235,210,255,${al})`); gr.addColorStop(1, 'rgba(195,139,255,0)');
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(p[0], p[1], 14, 0, 7); ctx.fill();
+  }
+  for (const f of a.fans) {
+    const R = dist - f.s0; if (R <= 0) continue;
+    const [X, Y] = w2s(...f.pos), base = Math.atan2(f.n[1], f.n[0]);
+    ctx.strokeStyle = `rgba(215,170,255,${Math.min(0.8, 0.6 * Math.sqrt(f.I))})`; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X, Y, R * st.view.s, base - f.th, base + f.th); ctx.stroke();
+  }
+  ctx.restore();
+}
+let contTimer = null;
+function toggleCont() {
+  st.cont = !st.cont;
+  if (st.cont) { const loop = () => { if (!st.cont) return; fire(40, false); contTimer = requestAnimationFrame(loop); }; loop(); }
+  else cancelAnimationFrame(contTimer);
+  updateQbar();
+}
+function flashMsg(m) { const w = $('warn'); w.textContent = m; w.style.display = 'block'; setTimeout(() => { if (st.sim && !st.sim.truncated) w.style.display = 'none'; }, 2500); }
+let qbarSig = '';
+function updateQbar() {
+  const q = hasPhoton(), sig = q + '|' + st.cont + '|' + LANG, bar = $('qbar');
+  if (sig !== qbarSig) {
+    qbarSig = sig;
+    if (q) bar.innerHTML = `<b style="color:var(--q)">⚛ ${L('Mode photon unique', 'Single-photon mode')}</b>
+      <button class="q" id="qf1">${L('Émettre 1 photon', 'Emit 1 photon')} <kbd>${L('Espace', 'Space')}</kbd></button><button class="q" id="qf100">×100</button><button class="q" id="qf10k">×10 000</button>
+      <button class="q ${st.cont ? 'on' : ''}" id="qcont">${st.cont ? L('■ Arrêter le flux', '■ Stop stream') : L('▶ Flux continu', '▶ Continuous stream')}</button><button id="qreset">${L('Remettre à zéro', 'Reset')}</button><span class="stat" id="qstat"></span>`;
+    else bar.innerHTML = L(`<b style="color:var(--acc)">Mode classique (laser)</b><span class="stat">Les capteurs affichent les puissances. Ajoute une <b>source de photons uniques</b> pour simuler des qubits et des mesures quantiques.</span>`, `<b style="color:var(--acc)">Classical mode (laser)</b><span class="stat">Sensors show powers. Add a <b>single-photon source</b> to simulate qubits and quantum measurements.</span>`);
+    if (q) { $('qf1').onclick = () => fire(1, true); $('qf100').onclick = () => fire(100); $('qf10k').onclick = () => fire(10000); $('qcont').onclick = toggleCont; $('qreset').onclick = () => { resetCounts(); draw(); updateCards(); updateQbar(); }; }
+  }
+  const s = $('qstat'); if (s) s.innerHTML = L(`photons émis <b>${st.fired}</b> · détectés <b>${st.detected}</b> · absorbés/perdus <b>${st.lost}</b>`, `photons emitted <b>${st.fired}</b> · detected <b>${st.detected}</b> · absorbed/lost <b>${st.lost}</b>`);
+}
+
+// ---------- expériences prêtes ----------
+const BREW = Math.atan(1.5046 + 4200 / 633 / 633) / D2R;
+const PRESETS = {
+  mzi: {
+    name: 'Mach-Zehnder : qubit de chemin', view: { x: 210, y: -140, s: 1.9 },
+    desc: 'Un photon unique entre dans une séparatrice 50/50 : il est en superposition des deux bras (<b>qubit de chemin</b>, lu par les sondes Q1). La seconde séparatrice fait interférer les deux chemins. Avec φ = 0, <b>tous</b> les photons vont en D1 ; règle le <b>déphaseur φ</b> pour envoyer le qubit vers D2 (φ = 180°) ou en 50/50 (φ = 90°). Lance le flux continu pour vérifier les statistiques.',
+    comps: [['photon', 0, 0, 0, { lambda: 810, pol: 'H' }], ['bs', 100, 0, 45, {}, 'BS1'], ['phase', 200, 0, 0, { phi: 0 }], ['mirror', 300, 0, 45], ['mirror', 100, -200, 45], ['probe', 200, -200, 0, { mode: 'rail0', qname: 'Q1' }], ['probe', 300, -100, 90, { mode: 'rail1', qname: 'Q1' }], ['bs', 300, -200, 45, {}, 'BS2'], ['spad', 420, -200, 0, {}, 'D1'], ['spad', 300, -320, 90, {}, 'D2']],
+  },
+  whichpath: {
+    name: 'Information « quel chemin » et gomme quantique', view: { x: 220, y: -150, s: 1.8 },
+    desc: 'Même Mach-Zehnder, mais une lame λ/2 à 45° marque le bras du bas (H → V). La polarisation révèle le chemin : l\'interférence disparaît (D1 et D2 restent à 50 % quel que soit φ) et le qubit de chemin perd sa cohérence (|r| = 0 : il est intriqué avec la polarisation). <b>Gomme quantique</b> : règle les deux polariseurs devant les détecteurs à 45° pour effacer l\'information ; l\'interférence revient sur les photons qui passent.',
+    comps: [['photon', 0, 0, 0, { lambda: 810, pol: 'H' }], ['bs', 100, 0, 45, {}, 'BS1'], ['phase', 200, 0, 0, { phi: 0 }], ['mirror', 300, 0, 45], ['hwp', 300, -50, 90, { theta: 45 }, 'Marqueur'], ['mirror', 100, -200, 45], ['probe', 200, -200, 0, { mode: 'rail0', qname: 'Q1' }], ['probe', 300, -110, 90, { mode: 'rail1', qname: 'Q1' }], ['bs', 300, -200, 45, {}, 'BS2'], ['polarizer', 380, -200, 0, { theta: 0 }, 'Gomme1'], ['polarizer', 300, -270, 90, { theta: 0 }, 'Gomme2'], ['spad', 440, -200, 0, {}, 'D1'], ['spad', 300, -330, 90, {}, 'D2']],
+  },
+  hadamard: {
+    name: 'Qubit de polarisation : porte de Hadamard et mesure', view: { x: 170, y: -40, s: 2.6 },
+    desc: 'Le photon part dans |H⟩ = |0⟩. La lame λ/2 à 22,5° est une porte de <b>Hadamard</b> : elle prépare |+⟩ = (|0⟩+|1⟩)/√2 (voir la sphère de Bloch de la sonde). Le cube polarisant + deux SPAD forment une <b>mesure dans la base {|0⟩,|1⟩}</b> : 50 % / 50 %. Tourne la lame (0° → Z, 45° → X) ou change l\'état de la source.',
+    comps: [['photon', 0, 0, 0, { lambda: 810, pol: 'H' }], ['hwp', 80, 0, 0, { theta: 22.5 }, 'H'], ['probe', 150, 0, 0, { mode: 'pol' }, 'Sonde'], ['pbs', 230, 0, 45, {}, 'PBS'], ['spad', 330, 0, 0, {}, 'D|0⟩'], ['spad', 230, -100, 90, {}, 'D|1⟩']],
+  },
+  gates: {
+    name: 'Chaîne de portes : H · Z · H = X', view: { x: 220, y: -40, s: 2.2 },
+    desc: 'Une <b>chaîne d\'objets</b> qui réalise un petit circuit quantique sur un qubit de polarisation : Hadamard (λ/2 à 22,5°), Z (λ/2 à 0°), Hadamard. Le résultat est une porte NOT : |0⟩ → |1⟩, tous les photons arrivent sur D|1⟩. Les sondes montrent l\'état après chaque porte. Remplace Z par une lame λ/4 (porte S) ou une lame à retard pour une rotation quelconque.',
+    comps: [['photon', 0, 0, 0, { lambda: 810, pol: 'H' }], ['probe', 50, 0, 0, {}, 'ψ0'], ['hwp', 90, 0, 0, { theta: 22.5 }, 'H₁'], ['probe', 130, 0, 0, {}, 'ψ1'], ['hwp', 170, 0, 0, { theta: 0 }, 'Z'], ['probe', 210, 0, 0, {}, 'ψ2'], ['hwp', 250, 0, 0, { theta: 22.5 }, 'H₂'], ['probe', 290, 0, 0, {}, 'ψ3'], ['pbs', 360, 0, 45, {}, 'PBS'], ['spad', 450, 0, 0, {}, 'D|0⟩'], ['spad', 360, -90, 90, {}, 'D|1⟩']],
+  },
+  youngPhoton: {
+    name: 'Fentes d\'Young, photon par photon', view: { x: 300, y: 0, s: 1.2 },
+    desc: 'Chaque photon passe par les deux fentes à la fois et n\'apparaît qu\'en un point de l\'écran. Clique sur <b>▶ Flux continu</b> : les impacts aléatoires (points sur l\'écran, histogramme vert) dessinent peu à peu la figure d\'interférence prédite par |ψ|² (courbe violette). Change d ou a pour modifier l\'interfrange λD/d. Beaucoup de photons sont arrêtés par la plaque : c\'est normal.',
+    comps: [['photon', 0, 0, 0, { lambda: 532, pol: 'H', width: 1 }], ['dslit', 100, 0, 0, { d: 250, a: 40 }], ['screen', 600, 0, 0, { size: 12, res: 800 }, 'Caméra']],
+  },
+  young: {
+    name: 'Fentes d\'Young (laser)', view: { x: 300, y: 0, s: 1.2 },
+    desc: 'Laser vert sur deux fentes de 40 µm espacées de 250 µm, écran à 500 mm : interfrange attendu λD/d ≈ 1,06 mm sous l\'enveloppe de diffraction de chaque fente (sinc²). Remplace par une fente simple pour voir la diffraction seule.',
+    comps: [['laser', 0, 0, 0, { lambda: 532, width: 1 }], ['dslit', 100, 0, 0, { d: 250, a: 40 }], ['screen', 600, 0, 0, { size: 12, res: 800 }, 'Écran']],
+  },
+  michelson: {
+    name: 'Interféromètre de Michelson', view: { x: 160, y: 0, s: 2 },
+    desc: 'Le miroir M1 est incliné de 0,03° : les deux faisceaux qui reviennent font un petit angle et produisent des franges rectilignes sur la caméra (interfrange ≈ λ/2α ≈ 0,6 mm). Mets l\'angle de M1 à 0 pour une teinte plate, puis déplace M1 de quelques dixièmes de mm (flèches ou champ x) pour voir l\'intensité osciller.',
+    comps: [['laser', 0, 0, 0, { lambda: 633, width: 4 }], ['bs', 150, 0, 45, {}, 'BS'], ['mirror', 300, 0, 0.03, {}, 'M1'], ['mirror', 150, -150, 90, {}, 'M2'], ['screen', 150, 150, 90, { size: 10, res: 800 }, 'Caméra']],
+  },
+  prism: {
+    name: 'Dispersion par un prisme', view: { x: 220, y: 80, s: 1.6 },
+    desc: 'Lumière blanche (13 raies de 400 à 700 nm) dans un prisme de flint SF11 : l\'indice dépend de λ (loi de Cauchy), le violet est plus dévié que le rouge. Le spectromètre et l\'écran montrent l\'arc-en-ciel. Change le matériau (diamant, eau…) ou tourne le prisme.',
+    comps: [['laser', 0, 0, 0, { spectrum: 'white', width: 1.5, pol: 'U' }], ['prism', 150, 0, 110, { side: 60, apex: 45, material: 'SF11' }], ['screen', 349, 181, 42.5, { size: 40, res: 600 }, 'Écran']],
+  },
+  grating: {
+    name: 'Réseau de diffraction', view: { x: 250, y: 0, s: 1.4 },
+    desc: 'Réseau de 600 traits/mm éclairé en lumière RVB, suivi d\'une lentille f = 150 mm : chaque ordre ±1, ±2 donne une raie colorée sur l\'écran placé au plan focal (sin θ = mλN). C\'est le principe d\'un spectromètre.',
+    comps: [['laser', 0, 0, 0, { spectrum: 'rgb', width: 1 }], ['grating', 100, 0, 0, { lpm: 600, orders: 2 }], ['lens', 250, 0, 0, { f: 150, size: 170 }], ['screen', 400, 0, 0, { size: 150, res: 1500 }, 'Écran']],
+  },
+  kepler: {
+    name: 'Lentilles : lunette de Kepler', view: { x: 230, y: 0, s: 1.7 },
+    desc: 'Deux lentilles convergentes (f₁ = 150 mm, f₂ = 50 mm) séparées de f₁ + f₂ : le faisceau parallèle ressort parallèle, 3× plus étroit (grossissement f₁/f₂). Déplace la seconde lentille pour voir le faisceau converger ou diverger.',
+    comps: [['collimated', 0, 0, 0, { beamWidth: 24, rays: 9, lambda: 550 }], ['lens', 100, 0, 0, { f: 150, size: 40 }], ['lens', 300, 0, 0, { f: 50, size: 30 }], ['screen', 450, 0, 0, { size: 30, res: 600 }, 'Écran']],
+  },
+  imaging: {
+    name: 'Formation d\'une image (2f – 2f)', view: { x: 200, y: 0, s: 1.6 },
+    desc: 'Une source ponctuelle à 2f d\'une lentille f = 100 mm donne une image nette à 2f de l\'autre côté. Déplace l\'écran ou la source pour voir l\'image se brouiller.',
+    comps: [['point', 0, 0, 0, { spread: 24, rays: 15, lambda: 590 }], ['lens', 200, 0, 0, { f: 100, size: 100 }], ['screen', 400, 0, 0, { size: 30, res: 600 }, 'Écran']],
+  },
+  malus: {
+    name: 'Loi de Malus', view: { x: 160, y: 0, s: 2.2 },
+    desc: 'Lumière non polarisée → polariseur à 0° (la moitié passe) → polariseur à θ → I = I₀/2·cos²θ. Fais varier l\'angle de P2. La sonde entre P1 et P2 montre l\'état de polarisation. Bonus : glisse une lame λ/4 entre les deux pour voir la polarisation devenir circulaire.',
+    comps: [['laser', 0, 0, 0, { pol: 'U', lambda: 633, power: 1 }], ['polarizer', 100, 0, 0, { theta: 0 }, 'P1'], ['polarizer', 200, 0, 0, { theta: 45 }, 'P2'], ['probe', 150, 0, 0, { mode: 'pol' }, 'Sonde'], ['power', 300, 0, 0, {}, 'PD']],
+  },
+  brewster: {
+    name: 'Angle de Brewster et Fresnel', view: { x: 190, y: -40, s: 2 },
+    desc: `Lumière non polarisée sur un bloc de BK7 incliné à l\'angle de Brewster (${BREW.toFixed(1)}°) : la composante p (H, dans le plan) n\'est pas du tout réfléchie, donc le faisceau réfléchi est <b>polarisé V</b> (S₁ = −1 sur le polarimètre). Change l\'angle du bloc pour voir la réflexion H réapparaître.`,
+    comps: [['laser', 0, 0, 0, { pol: 'U', lambda: 633 }], ['block', 150, 0, BREW, { w: 20, h: 60, material: 'BK7', fresnel: true }, 'Bloc'], ['polarimeter', 179, -110, -66.85, { size: 15 }, 'Réfléchi'], ['polarimeter', 320, 9.4, 0, { size: 15 }, 'Transmis']],
+  },
+  fabry: {
+    name: 'Cavité Fabry-Pérot', view: { x: 150, y: 0, s: 2.4 },
+    desc: 'Deux miroirs partiels (R = 90 %) : la lumière fait des dizaines d\'allers-retours, qui interfèrent. Seules certaines phases d\'aller-retour sont transmises (résonances fines). Fais glisser le déphaseur φ entre 0 et 180° : la transmission passe de ≈ 0,3 % à ≈ 86 % (pas 100 % : le faisceau gaussien diverge un peu à chaque aller-retour, comme dans une vraie cavité plan-plan ; essaie un faisceau plus large).',
+    comps: [['laser', 0, 0, 0, { lambda: 633 }], ['bs', 100, 0, 0, { R: 90 }, 'M_in'], ['phase', 150, 0, 0, { phi: 132.3 }, 'φ'], ['bs', 200, 0, 0, { R: 90 }, 'M_out'], ['power', 300, 0, 0, {}, 'PD']],
+  },
+};
+function loadPreset(key) {
+  const pr = PRESETS[key]; if (!pr) return;
+  pushUndo(); st.comps = []; st.nextId = 1; st.sel = null; st.presetKey = key;
+  for (const [type, x, y, a, p, label] of pr.comps) { const c = newComp(type, x, y, a, p || {}); if (label) c.label = tr(label); st.comps.push(c); }
+  st.view = Object.assign({}, pr.view);
+  if (st.cont) toggleCont();
+  geomChanged = true; recompute(); fitView(); buildProps(); updateCards(true);
+}
+
+// ---------- aide ----------
+const HELP_FR = `<h2>Banc d'optique quantique — mode d'emploi</h2>
+<p>Une table optique 2D vue de dessus. Tu poses des sources, des composants et des capteurs, tu les relies en chaîne, et le moteur propage la lumière en temps réel.</p>
+<h3>Ce que le moteur calcule</h3>
+<ul>
+<li><b>Optique géométrique</b> : réflexion, réfraction (Snell-Descartes), réflexion totale, lentilles et miroirs courbes, dispersion par la loi de Cauchy (n dépend de λ).</li>
+<li><b>Optique ondulatoire</b> : chaque faisceau garde son amplitude complexe et sa phase e^{ikL} le long du chemin optique. Les capteurs additionnent les <b>champs</b> (et pas les intensités) des faisceaux cohérents : franges, Michelson, Fabry-Pérot et Mach-Zehnder sortent tout seuls. Les faisceaux laser sont gaussiens (paramètre q : divergence, focalisation, courbure du front d'onde).</li>
+<li><b>Diffraction</b> : les fentes deviennent des rangées de sources de Huygens ; le réseau envoie la lumière dans ses ordres m.</li>
+<li><b>Polarisation</b> : calcul de Jones (polariseurs, lames λ/2, λ/4, retard quelconque, rotateur, cube polarisant, coefficients de Fresnel s/p).</li>
+<li><b>Quantique (un photon à la fois)</b> : l'amplitude de probabilité suit le même calcul. Quand tu émets un photon, un seul capteur clique, tiré au hasard selon la règle de Born P = |ψ|². Les pertes (absorbeurs, polariseurs, efficacité η des SPAD) sont comptées.</li>
+</ul>
+<h3>Qubits photoniques</h3>
+<table><tr><th>Porte</th><th>Objet</th></tr>
+<tr><td>Hadamard H</td><td>Lame λ/2, θ = 22,5°</td></tr><tr><td>X (NOT)</td><td>Lame λ/2, θ = 45°</td></tr><tr><td>Z</td><td>Lame λ/2, θ = 0°</td></tr>
+<tr><td>S (phase i)</td><td>Lame λ/4, θ = 0°</td></tr><tr><td>Rotation quelconque</td><td>Lame à retard (θ, δ) ou rotateur</td></tr>
+<tr><td>Mesure Z (polarisation)</td><td>Cube polarisant + 2 SPAD</td></tr>
+<tr><td>Qubit de chemin</td><td>Séparatrice 50/50 (≈ Hadamard), déphaseur φ (phase), Mach-Zehnder (rotation complète)</td></tr></table>
+<p>Codage : polarisation H = |0⟩, V = |1⟩, D = |+⟩, R = |+i⟩. Sur la sphère de Bloch, z = H/V, x = D/A, y = R/L. La <b>sonde d'état</b> lit l'état sans le perturber (c'est un outil de simulation, ça n'existe pas en vrai). Deux sondes « rail 0 » et « rail 1 » du même nom lisent un qubit de chemin, avec sa cohérence (|r| &lt; 1 si le qubit est intriqué avec autre chose).</p>
+<h3>Capteurs</h3>
+<p>Photodiode (puissance, flux de photons), SPAD (clics, efficacité, coups d'obscurité), écran/caméra (profil d'intensité et accumulation d'impacts), spectromètre, polarimètre (Stokes, ellipse, sphère de Poincaré), sonde d'état quantique.</p>
+<h3>Limites honnêtes</h3>
+<ul><li>Table en 2D ; l'optique est paraxiale pour les lentilles (pas d'aberrations).</li>
+<li>Un seul photon à la fois : pas encore de paires intriquées (SPDC), de Hong-Ou-Mandel ni de coïncidences à deux photons.</li>
+<li>La lumière diffractée par une fente n'est pas re-focalisée par une lentille placée après (elle va directement aux capteurs).</li>
+<li>Pas de matière « quantique » (atomes, niveaux d'énergie, absorption résonante) : les matériaux sont décrits par leur indice et leur transmission.</li></ul>
+<h3>Commandes</h3>
+<p>Molette = zoom · glisser le fond = se déplacer · glisser un objet = le déplacer · poignée ↻ = tourner (Maj : sans aimant) · <kbd>R</kbd>/<kbd>E</kbd> ±15° · <kbd>Suppr</kbd> · <kbd>Ctrl+D</kbd> · <kbd>Ctrl+Z</kbd> · <kbd>Espace</kbd> = 1 photon. Le montage est enregistré automatiquement dans ton navigateur ; utilise Exporter/Importer pour le garder dans un fichier.</p>
+<div class="btns"><button onclick="document.getElementById('mHelp').classList.remove('show')">Fermer</button></div>`;
+
+// ---------- boutons ----------
+const sel = $('preset');
+function fillPresets() { sel.innerHTML = ''; const o0 = document.createElement('option'); o0.value = ''; o0.textContent = L('📚 Expériences…', '📚 Experiments…'); sel.appendChild(o0); for (const [k, p] of Object.entries(PRESETS)) { const o = document.createElement('option'); o.value = k; o.textContent = LANG === 'en' ? PRESETS_EN[k][0] : p.name; sel.appendChild(o); } }
+fillPresets();
+sel.onchange = () => { if (sel.value) loadPreset(sel.value); sel.value = ''; };
+$('bNew').onclick = () => { pushUndo(); st.comps = []; st.sel = null; st.presetKey = ''; changed(); buildProps(); };
+$('bUndo').onclick = undo;
+$('bSnap').onclick = e => { st.snap = !st.snap; e.target.classList.toggle('on', st.snap); };
+$('bRays').onclick = e => { st.showRays = !st.showRays; e.target.classList.toggle('on', st.showRays); draw(); };
+function fitView() {
+  if (!st.comps.length) return; let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  for (const c of st.comps) { x0 = Math.min(x0, c.x); y0 = Math.min(y0, c.y); x1 = Math.max(x1, c.x); y1 = Math.max(y1, c.y); }
+  st.view.x = (x0 + x1) / 2; st.view.y = (y0 + y1) / 2; st.view.s = Math.max(0.2, Math.min(8, Math.min(W / (x1 - x0 + 140), H / (y1 - y0 + 110)))); draw(); save();
+}
+$('bFit').onclick = fitView;
+$('bHelp').onclick = () => $('mHelp').classList.add('show');
+$('mHelp').onclick = e => { if (e.target.id === 'mHelp') e.target.classList.remove('show'); };
+function openIO(exp) {
+  $('mIO').classList.add('show'); $('ioTitle').textContent = exp ? L('Exporter le montage', 'Export setup') : L('Importer un montage', 'Import a setup');
+  $('ioHint').textContent = exp ? L('Copie ce texte et garde-le dans un fichier .json.', 'Copy this text and keep it in a .json file.') : L('Colle un montage exporté, ou ouvre un fichier .json.', 'Paste an exported setup, or open a .json file.');
+  $('ioText').value = exp ? JSON.stringify({ format: 'banc-optique-1', comps: st.comps }, null, 1) : '';
+  $('ioLoad').style.display = exp ? 'none' : ''; $('ioFileBtn').style.display = exp ? 'none' : ''; $('ioCopy').style.display = exp ? '' : 'none';
+}
+$('bExport').onclick = () => openIO(true); $('bImport').onclick = () => openIO(false);
+$('ioClose').onclick = () => $('mIO').classList.remove('show');
+$('ioCopy').onclick = async () => { try { await navigator.clipboard.writeText($('ioText').value); $('ioCopy').textContent = L('Copié ✓', 'Copied ✓'); } catch (e) { $('ioText').select(); $('ioCopy').textContent = L('Sélectionné : Ctrl+C', 'Selected: Ctrl+C'); } setTimeout(() => $('ioCopy').textContent = L('Copier', 'Copy'), 1800); };
+$('ioFileBtn').onclick = () => $('ioFile').click();
+$('ioFile').onchange = async e => { const f = e.target.files[0]; if (f) $('ioText').value = await f.text(); };
+$('ioLoad').onclick = () => {
+  try {
+    const o = JSON.parse($('ioText').value); if (!Array.isArray(o.comps)) throw 0;
+    pushUndo(); st.comps = o.comps.filter(c => DEFS[c.type]).map(c => ({ ...c, p: Object.assign({}, DEFS[c.type].params, c.p) }));
+    st.nextId = 1 + Math.max(0, ...st.comps.map(c => +String(c.id).replace(/\D/g, '') || 0)); st.sel = null; st.presetKey = '';
+    $('mIO').classList.remove('show'); changed(); buildProps(); fitView();
+  } catch (e) { $('ioHint').textContent = L('⚠ Ce texte n\'est pas un montage valide.', '⚠ This text is not a valid setup.'); }
+};
+
+// ---------- langue ----------
+const HDR = { bNew: ['Nouveau', 'New', 'Vider la table', 'Clear the table'], bUndo: ['↶ Annuler', '↶ Undo', 'Annuler (Ctrl+Z)', 'Undo (Ctrl+Z)'], bSnap: ['Aimant', 'Snap', 'Aimanter à la grille (positions 5 mm, angles 5°)', 'Snap to grid (5 mm positions, 5° angles)'], bRays: ['Rayons', 'Rays', 'Afficher les faisceaux', 'Show beams'], bFit: ['⤢ Vue', '⤢ Fit', 'Recentrer la vue', 'Fit view'], bExport: ['Exporter', 'Export', '', ''], bImport: ['Importer', 'Import', '', ''], bHelp: ['? Aide', '? Help', '', ''], ioCopy: ['Copier', 'Copy', '', ''], ioFileBtn: ['Ouvrir un fichier…', 'Open a file…', '', ''], ioLoad: ['Charger ce montage', 'Load this setup', '', ''], ioClose: ['Fermer', 'Close', '', ''] };
+function applyLang() {
+  document.documentElement.lang = LANG;
+  for (const [id, t] of Object.entries(HDR)) { const e = $(id); if (!e) continue; e.textContent = L(t[0], t[1]); if (t[2]) e.title = L(t[2], t[3]); }
+  $('hTitle').innerHTML = L("Banc d'optique <span>quantique</span>", 'Quantum <span>optics</span> bench');
+  document.title = L("Banc d'optique quantique", 'Quantum optics bench');
+  $('preset').title = L('Charger une expérience', 'Load an experiment');
+  $('lFR').classList.toggle('on', LANG === 'fr'); $('lEN').classList.toggle('on', LANG === 'en');
+  $('helpBox').innerHTML = LANG === 'en' ? HELP_EN : HELP_FR;
+  fillPresets(); buildPalette(); buildProps(); qbarSig = ''; updateQbar(); updateCards(true); draw();
+}
+function setLang(l) {
+  if (l === LANG) return; LANG = l; try { localStorage.setItem('banc-optique-lang', l); } catch (e) { }
+  // renomme les étiquettes par défaut (ex. Écran1 ↔ Screen1, Sonde ↔ Probe)
+  const inv = {}; for (const [fr, en] of Object.entries(EN)) inv[en] = fr;
+  for (const c of st.comps) {
+    const m = c.label.match(/^(.*?)(\d*)$/), base = m[1], num = m[2];
+    const pf = PREFIX[c.type], pe = PREFIX_EN[c.type];
+    if (l === 'en' && base === pf) c.label = pe + num; else if (l === 'fr' && base === pe) c.label = pf + num;
+    else if (l === 'en' && EN[c.label] && EN[c.label] !== c.label && !DEFS[c.label]) c.label = EN[c.label];
+    else if (l === 'fr' && inv[c.label] && inv[c.label] !== c.label) c.label = inv[c.label];
+  }
+  applyLang(); save();
+}
+$('lFR').onclick = () => setLang('fr'); $('lEN').onclick = () => setLang('en');
+
+// ---------- démarrage ----------
+buildPalette();
+window.addEventListener('resize', () => { resize(); updateCards(true); });
+new ResizeObserver(() => resize()).observe($('stage'));
+resize();
+let restored = false;
+try {
+  const s = JSON.parse(localStorage.getItem('banc-optique-v1') || 'null');
+  if (s && Array.isArray(s.comps) && s.comps.length) { st.comps = s.comps.filter(c => DEFS[c.type]).map(c => ({ ...c, p: Object.assign({}, DEFS[c.type].params, c.p) })); st.nextId = s.nextId || 100; if (s.view) st.view = s.view; st.presetKey = s.preset || ''; restored = true; }
+} catch (e) { }
+if (restored) { geomChanged = true; recompute(); buildProps(); } else loadPreset('mzi');
+applyLang();
+
+</script>
+</body>
+</html>
