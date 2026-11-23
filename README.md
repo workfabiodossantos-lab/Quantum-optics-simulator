@@ -6,21 +6,6 @@ The whole application is a single HTML file. It has no dependencies, needs no in
 
 ---
 
-## Getting started
-
-1. Download `banc-optique-quantique.html`.
-2. Open it in a recent browser (Chrome, Edge, Firefox or Safari).
-3. Pick an experiment from the **📚 Experiments…** menu, or start from an empty table with **New**.
-
-Switch the interface language with the **FR | EN** buttons next to the title.
-
-**Optional: open it like a desktop app.**
-- **Chrome:** ⋮ menu → *Cast, save and share* → *Create shortcut…* → tick *Open as window*.
-- **Edge:** ⋯ menu → *Apps* → *Install this site as an app*.
-
----
-
-## Features
 
 ### Physics engine
 | Domain | What is simulated |
